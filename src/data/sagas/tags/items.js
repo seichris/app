@@ -1,6 +1,6 @@
-import { call, put, takeEvery, takeLatest, all } from 'redux-saga/effects'
-import _ from 'lodash-es'
+import { call, put, takeEvery, takeLatest } from 'redux-saga/effects'
 import Api from '../../modules/api'
+import ApiError from '../../modules/error'
 
 import {
 	TAGS_SUGGESTED_LOAD_SUCCESS, TAGS_SUGGESTED_LOAD_ERROR,
@@ -23,21 +23,21 @@ function* loadSuggestedTags({_id, item, ignore=false, dontLoadSuggestedTags=fals
 	if ((ignore)||(dontLoadSuggestedTags))
 		return;
 
+	if (!item ||
+		!item.title ||
+		!item.link)
+		return;
+
 	try {
-		const titleDescription = _.truncate((item.title||'')+' '+(item.excerpt||''), {length: 700}).trim()
-		const [keywords, parsed] = yield all([
-			call(Api.get, `keywords?text=${encodeURIComponent(titleDescription)}&domain=${encodeURIComponent(item.domain||'')}`, {cache: 'force-cache'}),
-			call(Api.get, 'parse?url='+encodeURIComponent(item.link), {cache: 'force-cache'})
-		])
+		const parsed = yield call(Api.get, 'import/url/parse?url='+encodeURIComponent(item.link))
 
 		var tags = []
 
-		if (keywords.result)
-			tags = tags.concat(keywords.tags||[])
+		if (parsed && parsed.item && parsed.item.meta)
+			tags = tags.concat(parsed.item.meta.tags||[])
 
-		if (parsed.result)
-			if (parsed.item.meta)
-				tags = tags.concat(parsed.item.meta.tags||[])
+		if (tags.length == 1)
+			tags = []
 
 		yield put({
 			type: TAGS_SUGGESTED_LOAD_SUCCESS,
@@ -45,6 +45,12 @@ function* loadSuggestedTags({_id, item, ignore=false, dontLoadSuggestedTags=fals
 			tags
 		});
 	} catch (error) {
+		//ignore auth error
+		if (typeof error == 'object' &&
+			error instanceof ApiError &&
+			error.status==401)
+			return
+
 		yield put({
 			type: TAGS_SUGGESTED_LOAD_ERROR,
 			error

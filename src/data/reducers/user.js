@@ -1,6 +1,7 @@
 import { 
 	USER_LOAD_REQ, USER_LOAD_SUCCESS, USER_LOAD_ERROR,
 	USER_UPDATE_REQ, USER_UPDATE_SUCCESS, USER_UPDATE_ERROR,
+	USER_AVATAR_UPLOAD_REQ,
 	USER_NOT_AUTHORIZED,
 	USER_REFRESH_REQ,
 	USER_LOGIN_PASSWORD,
@@ -8,6 +9,7 @@ import {
 	USER_LOST_PASSWORD, USER_LOST_PASSWORD_SUCCESS,
 	USER_RECOVER_PASSWORD,
 	USER_LOGIN_NATIVE,
+	USER_LOGIN_JWT,
 	USER_SUBSCRIPTION_LOAD_REQ, USER_SUBSCRIPTION_LOAD_SUCCESS, USER_SUBSCRIPTION_LOAD_ERROR
 } from '../constants/user'
 import { REHYDRATE } from 'redux-persist/src/constants'
@@ -31,13 +33,17 @@ export default function(state = initialState, action){switch (action.type) {
 		if (!current)
 			return state
 
+		//do not restore state for unlogged user
+		if (!status || status.authorized == 'no')
+			return state
+
 		if (subscription && !subscription.loading)
 			state = state.set('subscription', subscription)
 			
 		return state
 			.set('fromCache', true)
 			.set('current', current)
-			.set(['status', 'authorized'], (status||initialState.status).authorized)
+			.setIn(['status', 'authorized'], (status||initialState.status).authorized)
 	}
 
 	//Load
@@ -70,6 +76,11 @@ export default function(state = initialState, action){switch (action.type) {
 		return setSpecificStatus(state, 'native', 'loading')
 	}
 
+	//JWT
+	case USER_LOGIN_JWT:{
+		return setSpecificStatus(state, 'jwt', 'loading')
+	}
+
 	//Lost
 	case USER_LOST_PASSWORD:{
 		return setSpecificStatus(state, 'lost', 'loading')
@@ -84,7 +95,8 @@ export default function(state = initialState, action){switch (action.type) {
 		return setSpecificStatus(state, 'recover', 'loading')
 	}
 
-	case USER_UPDATE_REQ:{
+	case USER_UPDATE_REQ:
+	case USER_AVATAR_UPLOAD_REQ:{
 		if (state.status.authorized!='yes'){
 			action.ignore = true
 			return state;
@@ -117,13 +129,13 @@ export default function(state = initialState, action){switch (action.type) {
 		if (typeof action.onFail == 'function')
 			action.onFail(action.error)
 
-		state = initialState
+		if (state.status.authorized=='idle')
+			state = state.setIn(['status', 'authorized'], 'no')
 
 		if (action.way)
 			state = state.setIn(['errorReason', action.way], action.error)
 
 		return setSpecificStatus(state, action.way, 'error')
-			.setIn(['status', 'authorized'], 'no')
 	}
 
 	//happen on logout too
@@ -157,6 +169,7 @@ const setSpecificStatus = (state, way='', val='idle')=>{
 		.setIn(['status', 'login'], 	way == 'login' ? val : 'idle')
 		.setIn(['status', 'register'], 	way == 'register' ? val : 'idle')
 		.setIn(['status', 'native'], 	way == 'native' ? val : 'idle')
+		.setIn(['status', 'jwt'],		way == 'jwt' ? val : 'idle')
 		.setIn(['status', 'lost'],		way == 'lost' ? val : 'idle')
 		.setIn(['status', 'recover'], 	way == 'recover' ? val : 'idle')
 		.setIn(['status', 'save'], 		way == 'save' ? val : 'idle')
@@ -172,11 +185,13 @@ const initialState = Immutable({
 		lost:		'idle', //idle, loading, error, success
 		recover:	'idle',
 		save:		'idle', //idle, loading, error
+		jwt:		'idle',
 	},
 	errorReason: {
 		login:'',
 		register:'',
 		native:'',
+		jwt:'',
 		save:''
 	},
 	current: blankCurrent,

@@ -1,4 +1,3 @@
-import s from './index.module.styl'
 import React from 'react'
 import Button from '~co/common/button'
 import Icon from '~co/common/icon'
@@ -18,7 +17,9 @@ export default class Select extends React.Component {
     pin = React.createRef()
     
     onButtonClick = (e)=>{
-        const haveOptions = this.props.children.some(child=>child && child.type == 'option')
+        const { children=[] } = this.props
+
+        const haveOptions = (Array.isArray(children) ? children : [children]).some(child=>child && child.type == 'option')
 
         if (haveOptions)
             this.setState({ show: true })
@@ -48,7 +49,7 @@ export default class Select extends React.Component {
                 data-value={child.props.value}
                 onClick={this.onOptionClick}>
                 <Icon name={child.props.value == this.props.value ? 'check' : 'blank'} />
-                {{...child, type: 'span'}}
+                {child.props.children}
             </MenuItem>
         )
     }
@@ -61,13 +62,17 @@ export default class Select extends React.Component {
             return null
         
         if (child && child.type == 'option')
-            return {...child, type: 'span'}
+            return (
+                <React.Fragment key={child.props.value}>
+                    {child.props.children}
+                </React.Fragment>
+            )
             
         return child
     }
 
     render() {
-        const { children=[], value, className='', ...etc } = this.props
+        const { children=[], value, ...etc } = this.props
         const { show } = this.state
 
         return (
@@ -75,10 +80,9 @@ export default class Select extends React.Component {
                 <Button 
                     ref={this.pin}
                     data-value={value} 
-                    className={s.select+' '+className}
                     {...etc}
                     onClick={this.onButtonClick}>
-                    {children.map(this.renderChildren)}
+                    {(Array.isArray(children) ? children : [children]).map(this.renderChildren)}
                     <Icon name='arrow' />
                 </Button>
 
@@ -87,7 +91,7 @@ export default class Select extends React.Component {
                         pin={this.pin}
                         onClose={this.onPopoverClose}>
                         <Menu>
-                            {children.map(this.renderOption)}
+                            {(Array.isArray(children) ? children : [children]).map(this.renderOption)}
                         </Menu>
                     </Popover>
                 )}

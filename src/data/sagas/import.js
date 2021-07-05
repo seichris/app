@@ -2,8 +2,8 @@ import { call, put, select, takeLatest } from 'redux-saga/effects'
 import _ from 'lodash-es'
 import Api from '../modules/api'
 import * as c from '../constants/import'
-import { loadCollections } from './collections/items'
-import { createCollection, removeCollection } from './collections/single'
+import { loadCollections, removeAllCollections } from './collections/items'
+import { createCollection } from './collections/single'
 
 export default function* () {
 	yield takeLatest(c.IMPORT_FILE_UPLOAD_REQ, fileUpload)
@@ -14,7 +14,7 @@ function* fileUpload({ file, ignore=false, onSuccess, onFail }) {
     if (ignore) return
 
 	try{
-		const { items=[], count } = yield call(Api.upload, 'import/file', { import: file })
+		const { items=[], count } = yield call(Api.upload, 'import/file', { import: file }, { timeout: 0 })
 
 		yield put({
 			type: c.IMPORT_FILE_UPLOAD_SUCCESS,
@@ -55,17 +55,10 @@ function* parcelSave({ ignore=false, onSuccess, onFail }) {
 
 //remove all my collections if mode is from_scratch
 function* from_scratch() {
-	const { import: { mode }, collections: { items } } = yield select()
+	const { import: { mode } } = yield select()
 	if (mode !== 'from_scratch') return
 
-	const root = _.filter(
-		items,
-		({ _id, parentId, access: { level } })=>
-			_id == -1 || (_id > 0 && level >= 3 && !parentId)
-	)
-
-	for(const { _id } of root)
-		yield removeCollection({ _id })
+	yield removeAllCollections({})
 }
 
 function* process(items, parentId) {
@@ -88,6 +81,9 @@ function* process(items, parentId) {
 			{ title, parentId }, 
 			existingCollections
 		)
+
+		if (!collection)
+			throw new Error(`can't create collection ${JSON.stringify({ mode, title, parentId })}`)
 
 		//increment progress for 1 collection
 		yield put({
@@ -138,14 +134,18 @@ function* processBookmarks(mode, bookmarks, collectionId) {
 	for(const chunk of chunks){
 		let items = chunk.map(item=>({
 			...item,
-			collectionId
+			collectionId,
+			pleaseParse: {
+				weight: bookmarks.length,
+				disableNotification: false
+			}
 		}))
 
 		//prevent duplicates
 		if (mode === 'new'){
 			const { duplicates=[] } = yield call(Api.post, 'import/url/exists', {
 				urls: items.map(({ link })=>link)
-			})
+			}, { timeout: 0 })
 
 			if (duplicates.length)
 				items = items.filter(({ link })=>
@@ -157,7 +157,7 @@ function* processBookmarks(mode, bookmarks, collectionId) {
 
 		//create bookmarks
 		if (items.length)
-			yield call(Api.post, 'raindrops', { items })
+			yield call(Api.post, 'raindrops', { items }, { timeout: 0 })
 
 		//update progress
 		yield put({

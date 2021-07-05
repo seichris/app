@@ -2,10 +2,16 @@ import s from './content.module.styl'
 import React from 'react'
 
 //data-stretch
-export default function ModalContent({ children, ...etc }) {
+function ModalContent({ as='div', forwardedRef, children, className='', ...etc }) {
+    const Component = as
+    
     return (
-        <div className={s.content} {...etc}>
+        <Component {...etc} ref={forwardedRef} className={s.content+' '+className}>
             {children}
-        </div>
+        </Component>
     )
 }
+
+export default React.forwardRef((props, ref) => {
+    return <ModalContent {...props} forwardedRef={ref} />
+})

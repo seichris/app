@@ -14,17 +14,18 @@ export default class ReaderHeader extends React.PureComponent {
         {
             key: 'edit',
             title: t.s('edit'),
-            icon: 'edit'
+        },
+        {
+            key: 'web',
+            title: 'Web',
         },
         {
             key: 'preview',
             title: t.s('preview'),
-            icon: 'show'
         },
         {
             key: 'cache',
             title: t.s('permanentCopy'),
-            icon: 'cloud'
         }
     ]
 
@@ -62,9 +63,11 @@ export default class ReaderHeader extends React.PureComponent {
                     <Icon name='open' />
                 </Button>
 
-                <Settings
-                    tab={tab}
-                    item={item} />
+                {tab == 'preview' && item.type == 'article' ? (
+                    <Settings
+                        tab={tab}
+                        item={item} />
+                ) : null}
             </Header>
         )
     }

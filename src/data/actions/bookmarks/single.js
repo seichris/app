@@ -1,7 +1,7 @@
 import wrapFunc from '../../utils/wrapFunc'
 import {
-	BOOKMARK_LOAD_REQ, BOOKMARK_CREATE_REQ, BOOKMARK_UPDATE_REQ, BOOKMARK_REMOVE_REQ, BOOKMARK_UPLOAD_REQ,
-	BOOKMARK_RECOVER, BOOKMARK_IMPORTANT, BOOKMARK_SCREENSHOT, BOOKMARK_REPARSE, BOOKMARK_MOVE, BOOKMARK_PRELOAD,
+	BOOKMARK_LOAD_REQ, BOOKMARK_CREATE_REQ, BOOKMARKS_CREATE_REQ, BOOKMARK_UPDATE_REQ, BOOKMARK_REMOVE_REQ, BOOKMARK_UPLOAD_REQ,
+	BOOKMARK_RECOVER, BOOKMARK_IMPORTANT, BOOKMARK_SCREENSHOT, BOOKMARK_REPARSE, BOOKMARK_MOVE,
 	BOOKMARK_REORDER
 } from '../../constants/bookmarks'
 
@@ -54,11 +54,6 @@ export const oneMove = (_id, collectionId, onSuccess, onFail)=>({
 	onFail: wrapFunc(onFail)
 })
 
-export const onePreload = ({link})=>({
-	type: BOOKMARK_PRELOAD,
-	link
-})
-
 export const oneReorder = (_id, toId)=>({
 	type: BOOKMARK_REORDER,
 	_id: parseInt(_id),
@@ -84,6 +79,14 @@ export const oneUpdate = (_id, set={}, onSuccess, onFail)=>({
 	type: BOOKMARK_UPDATE_REQ,
 	_id: parseInt(_id),
 	set,
+	onSuccess: wrapFunc(onSuccess),
+	onFail: wrapFunc(onFail)
+})
+
+//Many
+export const manyCreate = (items=[], onSuccess, onFail)=>({
+	type: BOOKMARKS_CREATE_REQ,
+	items,
 	onSuccess: wrapFunc(onSuccess),
 	onFail: wrapFunc(onFail)
 })

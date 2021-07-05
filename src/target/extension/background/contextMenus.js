@@ -1,17 +1,11 @@
 import browser from 'webextension-polyfill'
 import { openAdd } from './utils'
+import { environment } from '../environment'
 
 async function onClicked({ menuItemId, pageUrl, srcUrl, linkUrl, linkText, selectionText }) {
     switch(menuItemId) {
         case 'save_page':{
-            let title
-
-            try{
-                const [ tab ] = await browser.tabs.query({ active: true, currentWindow: true })
-                title = tab.title
-            } catch(e) {}
-            
-            return openAdd({ link: pageUrl, title: title||'' })
+            return openAdd({ link: pageUrl })
         }
 
         case 'save_link':
@@ -25,35 +19,43 @@ async function onClicked({ menuItemId, pageUrl, srcUrl, linkUrl, linkText, selec
     }
 }
 
-export default async function() {
+async function init() {
     //remove all to be sure
     try{
         await browser.contextMenus.removeAll()
     } catch (e) {}
 
+    const suffix = (environment.includes('safari')?` ${browser.i18n.getMessage('in')} Raindrop.io`:'')
+
     //create
     await Promise.all([
         browser.contextMenus.create({
             id: 'save_page',
-            title: browser.i18n.getMessage('savePage'),
+            title: browser.i18n.getMessage('savePage')+suffix,
             contexts: ['page']
         }),
         browser.contextMenus.create({
             id: 'save_link',
-            title: browser.i18n.getMessage('saveLink'),
+            title: browser.i18n.getMessage('saveLink')+suffix,
             contexts: ['link']
         }),
         browser.contextMenus.create({
             id: 'save_video',
-            title: browser.i18n.getMessage('saveVideo'),
+            title: browser.i18n.getMessage('saveVideo')+suffix,
             contexts: ['video']
         }),
         browser.contextMenus.create({
             id: 'save_image',
-            title: browser.i18n.getMessage('saveImage'),
+            title: browser.i18n.getMessage('saveImage')+suffix,
             contexts: ['image']
         })
     ])
+}
+
+export default function() {
+    if (!browser.contextMenus) return
+
+    init()
 
     //event
     browser.contextMenus.onClicked.removeListener(onClicked)

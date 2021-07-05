@@ -1,7 +1,6 @@
 const path = require('path')
 
 const webpack = require('webpack')
-const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const TerserJSPlugin = require('terser-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -11,17 +10,18 @@ const SentryCliPlugin = require('@sentry/webpack-plugin')
 //defaults
 process.env.SENTRY_RELEASE = String(new Date().getTime())
 
-module.exports = ({ production, filename='[name].[contenthash]' }) => ({
+module.exports = ({ production, filename='[name].[contenthash]', sentry={} }) => ({
 	mode:		production ? 'production' : 'development',
 	context:	path.resolve(__dirname, '../src'),
-	devtool:	production ? 'source-map' : 'cheap-module-eval-source-map',
+	devtool:	production ? 'source-map' : 'eval-cheap-module-source-map',
 	
 	entry: {
 		app: './index.js'
 	},
 	
 	output: {
-		filename:	`assets/${filename}.js`
+		filename:	`assets/${filename}.js`,
+		clean:		true
 	},
 
 	devServer: {
@@ -64,23 +64,27 @@ module.exports = ({ production, filename='[name].[contenthash]' }) => ({
 	plugins: [
 		//pre plugins
 		...(production ? [
-			//Clean dist folder
-			new CleanWebpackPlugin(),
-		] : []),
+		] : [
+		]),
 
 		//Sentry
-		...(typeof process.env.SENTRY_UPLOAD_SOURCEMAPS != 'undefined' ? [
+		...(production ? [
 			new SentryCliPlugin({
+				org: 'oblako-corp',
+				project: 'app',
+				authToken: process.env.SENTRY_AUTH_TOKEN, //required in CI environment
 				release: process.env.SENTRY_RELEASE,
-				dryRun: !production,
+
 				include: './src',
 				ignore: [ 'node_modules', 'build', 'dist' ],
 				configFile: path.resolve(__dirname, 'sentry.properties'),
+				...sentry
 			})
 		]: []),
 
 		new webpack.DefinePlugin({
 			'process.env.NODE_ENV': JSON.stringify(production?'production':'development'),
+			'process.env.SENTRY_RELEASE': JSON.stringify(process.env.SENTRY_RELEASE),
 			RAINDROP_ENVIRONMENT: JSON.stringify('browser')
 		}),
 
@@ -88,7 +92,6 @@ module.exports = ({ production, filename='[name].[contenthash]' }) => ({
 		new HtmlWebpackPlugin({
 			title: 'Raindrop.io',
 			template: './index.ejs',
-			favicon: './assets/brand/favicon.ico',
 			hash: true,
 			scriptLoading: 'defer',
 			inject: 'head', //head better for extension
@@ -97,7 +100,7 @@ module.exports = ({ production, filename='[name].[contenthash]' }) => ({
 
 		//CSS
 		new MiniCssExtractPlugin({
-			filename: `${filename}.css`,
+			filename: `assets/${filename}.css`,
 			chunkFilename: `assets/${filename}.css`
 		})
 	],
@@ -116,7 +119,14 @@ module.exports = ({ production, filename='[name].[contenthash]' }) => ({
 					}
 				},
 				{
-					loader: 'babel-loader'
+					resourceQuery: /raw/,
+					loader: 'raw-loader'
+				},
+				{
+					loader: 'babel-loader',
+					options: {
+						envName: production ? 'production' : 'development'
+					}
 				}
 			]
 		},

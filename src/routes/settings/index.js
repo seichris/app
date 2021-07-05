@@ -19,32 +19,40 @@ import Import from './import'
 import Backups from './backups'
 import Integrations from './integrations'
 
-export default (props)=>(
-    <Protected redirect>
-        <Screen className={s.settings}>
-            <Helmet><title>{t.s('settings')}</title></Helmet>
+export default (props)=>{
+    const hideFrame = navigator.userAgent.includes('RaindropMobile')
 
-            <Header {...props} />
-            <Tabs {...props} />
-
-            <div className={s.wrap}>
-                <div className={s.body}>
-                    <Switch>
-                        <Route path={`${props.match.path}/extension`} component={Extension} />
-                        <Route path={`${props.match.path}/app`} component={App} />
-                        <Route path={`${props.match.path}/account`} component={Account} />
-                        <Route path={`${props.match.path}/pro`} component={Pro} />
-                        <Route path={`${props.match.path}/import`} component={Import} />
-                        <Route path={`${props.match.path}/backups`} component={Backups} />
-                        <Route path={`${props.match.path}/integrations`} component={Integrations} />
-
-                        {/* Default route */}
-                        <Route><Redirect to={`${props.match.path}/${target=='extension'?'extension':'app'}`} /></Route>
-                    </Switch>
+    return (
+        <Protected redirect>
+            <Screen className={s.settings}>
+                <Helmet><title>{t.s('settings')}</title></Helmet>
+    
+                {!hideFrame && (
+                    <>
+                        <Header {...props} />
+                        <Tabs {...props} />
+                    </>
+                )}
+    
+                <div className={s.wrap}>
+                    <div className={s.body}>
+                        <Switch>
+                            <Route path={`${props.match.path}/extension`} component={Extension} />
+                            <Route path={`${props.match.path}/app`} component={App} />
+                            <Route path={`${props.match.path}/account`} component={Account} />
+                            <Route path={`${props.match.path}/pro`} component={Pro} />
+                            <Route path={`${props.match.path}/import`} component={Import} />
+                            <Route path={`${props.match.path}/backups`} component={Backups} />
+                            <Route path={`${props.match.path}/integrations`} component={Integrations} />
+    
+                            {/* Default route */}
+                            <Route><Redirect to={`${props.match.path}/${target=='extension'?'extension':'app'}`} /></Route>
+                        </Switch>
+                    </div>
                 </div>
-            </div>
-
-            <Footer />
-        </Screen>
-    </Protected>
-)
+    
+                {!hideFrame && <Footer />}
+            </Screen>
+        </Protected>
+    )
+}

@@ -1,5 +1,5 @@
 const fs = require('fs')
-const config = require('~config')
+const csp = require('~config/csp')
 const locales = require('./locales')
 
 function file({ emitFile }, filename) {
@@ -42,11 +42,17 @@ module.exports = ({ vendor, production=false }, l) => {
 			scripts: [
 				'assets/background.js'
 			],
-			persistent: true
+			persistent: false
 		},
 
 		browser_action: {
-			default_popup: 'index.html?browser_action',
+			default_popup: vendor=='safari' || vendor=='firefox' ? 
+				[
+					file(l, '../../../assets/target/extension/browser_action_in_iframe.html'),
+					file(l, '../../../assets/target/extension/browser_action_in_iframe.js'),
+					file(l, '../../../assets/target/extension/browser_action_in_iframe.css')
+				][0] : 
+				'index.html?browser_action',
 			default_icon: {
 				//chrome based icon
 				...(vendor == 'chrome' || vendor == 'opera' ? {
@@ -57,8 +63,9 @@ module.exports = ({ vendor, production=false }, l) => {
 				//safari icon
 				...(vendor == 'safari' ? {
 					16: file(l, '../../../assets/target/extension/action_safari_16.png'),
-					24: file(l, '../../../assets/target/extension/action_safari_24.png'),
-					32: file(l, '../../../assets/target/extension/action_safari_32.png')
+					19: file(l, '../../../assets/target/extension/action_safari_19.png'),
+					32: file(l, '../../../assets/target/extension/action_safari_32.png'),
+					38: file(l, '../../../assets/target/extension/action_safari_38.png')
 				} : {})
 			},
 			//firefox
@@ -73,9 +80,8 @@ module.exports = ({ vendor, production=false }, l) => {
 
 		permissions: [
 			'contextMenus',
-			'notifications',
 			'activeTab',
-			'https://*.raindrop.io/'
+			...(production ? [] : ['http://localhost:3000/*'])
 		],
 
 		optional_permissions: [
@@ -98,14 +104,30 @@ module.exports = ({ vendor, production=false }, l) => {
 			},
 			save_page: {
 				suggested_key: {
-					default: 'Ctrl+Shift+O',
-					windows: 'Ctrl+Shift+O',
-					mac: 'Command+Shift+O',
-					chromeos: 'Ctrl+Shift+O',
-					linux: 'Ctrl+Shift+O'
+					default: 'Ctrl+Shift+S',
+					windows: 'Ctrl+Shift+S',
+					mac: 'Command+Shift+S',
+					chromeos: 'Ctrl+Shift+S',
+					linux: 'Ctrl+Shift+S'
 				},
 				description: '__MSG_savePage__'
-			}
+			},
+			open_raindrop: {
+				description: '__MSG_openRaindrop__',
+			},
+
+			...(vendor == 'firefox' || vendor == 'opera' ? {
+				_execute_sidebar_action: {
+					suggested_key: {
+						default: 'Ctrl+E',
+						windows: 'Ctrl+E',
+						mac: 'MacCtrl+E',
+						chromeos: 'Ctrl+E',
+						linux: 'Ctrl+E'
+					},
+					description: '__MSG_openSidebar__'
+				}
+			}: {}),
 		},
 
 		...(vendor == 'firefox' || vendor == 'opera' ? {
@@ -123,12 +145,11 @@ module.exports = ({ vendor, production=false }, l) => {
 			}
 		}: {}),
 
-		content_security_policy: `script-src 'self' ${config.csp.hosts} ${!production?'\'unsafe-eval\'':''}; object-src 'none';`
+		//firefox review not pass if csp have custom domains in script-src
+		...(vendor != 'firefox' ? {
+			content_security_policy: `script-src 'self' ${csp.hosts} ${!production?'\'unsafe-eval\'':''}; object-src 'none';`
+		} : {}),
 	}
-
-	//disable google analytics for firefox extension
-	if (vendor == 'firefox')
-		json.content_security_policy = json.content_security_policy.replace('https://*.google-analytics.com', '')
 
 	return { code: JSON.stringify(json, null, 2) };
 }

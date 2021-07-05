@@ -15,7 +15,7 @@ export default class AccountSocialLogin extends React.Component {
 
     render() {
         const { all } = this.state
-        const redirect = sessionStorage.getItem('redirect') || ''
+        const redirect = (window.sessionStorage && window.sessionStorage.getItem('redirect')) || ''
 
         return (
             <div className={s.buttons}>
@@ -26,7 +26,7 @@ export default class AccountSocialLogin extends React.Component {
                         variant='outline'
                         disabled={this.props.disabled}
                         data-block
-                        href={`${API_ENDPOINT_URL}auth/${vendor}?redirect=${redirect}`}>
+                        href={`${API_ENDPOINT_URL}auth/${vendor}?redirect=${encodeURIComponent(redirect)}`}>
                         <Icon name={vendor} />
                     </Button>
                 ))}

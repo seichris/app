@@ -4,12 +4,13 @@ import Api from '../../modules/api'
 import {
 	BOOKMARK_LOAD_REQ, BOOKMARK_LOAD_SUCCESS, BOOKMARK_LOAD_ERROR,
 	BOOKMARK_CREATE_REQ, BOOKMARK_CREATE_SUCCESS, BOOKMARK_CREATE_ERROR,
+	BOOKMARKS_CREATE_REQ,
 	BOOKMARK_UPDATE_REQ, BOOKMARK_UPDATE_SUCCESS, BOOKMARK_UPDATE_ERROR,
 	BOOKMARK_REMOVE_REQ, BOOKMARK_REMOVE_SUCCESS, BOOKMARK_REMOVE_ERROR,
 	BOOKMARK_UPLOAD_REQ,
 	BOOKMARK_REORDER,
 
-	BOOKMARK_RECOVER, BOOKMARK_IMPORTANT, BOOKMARK_SCREENSHOT, BOOKMARK_REPARSE, BOOKMARK_MOVE, BOOKMARK_PRELOAD
+	BOOKMARK_RECOVER, BOOKMARK_IMPORTANT, BOOKMARK_SCREENSHOT, BOOKMARK_REPARSE, BOOKMARK_MOVE
 } from '../../constants/bookmarks'
 
 import {
@@ -26,7 +27,6 @@ export default function* () {
 	yield takeEvery(BOOKMARK_SCREENSHOT, screenshot)
 	yield takeEvery(BOOKMARK_REPARSE, reparse)
 	yield takeEvery(BOOKMARK_MOVE, move)
-	yield takeEvery(BOOKMARK_PRELOAD, preload)
 	yield takeEvery(BOOKMARK_REORDER, reorder)
 
 	//single
@@ -35,6 +35,9 @@ export default function* () {
 	yield takeEvery(BOOKMARK_UPDATE_REQ, updateBookmark)
 	yield takeEvery(BOOKMARK_REMOVE_REQ, removeBookmark)
 	yield takeEvery(BOOKMARK_UPLOAD_REQ, uploadBookmark)
+
+	//many
+	yield takeEvery(BOOKMARKS_CREATE_REQ, createBookmarks)
 }
 
 function* loadBookmark({ ignore=false, _id }) {
@@ -59,8 +62,7 @@ function* loadBookmark({ ignore=false, _id }) {
 }
 
 function* createBookmark({obj={}, ignore=false, draft, onSuccess, onFail}) {
-	if (ignore)
-		return;
+	if (ignore) return;
 
 	try{
 		let item = { ...obj }
@@ -70,12 +72,9 @@ function* createBookmark({obj={}, ignore=false, draft, onSuccess, onFail}) {
 			item.pleaseParse = { weight: 1 }
 		//parse bookmark otherwise
 		else {
-			const parsed = yield call(Api.get, 'parse?url='+encodeURIComponent(item.link))
+			const parsed = yield call(Api.get, 'import/url/parse?url='+encodeURIComponent(item.link))
 
-			//override empty values
-			for(const key in parsed.item)
-				if (!item[key])
-					item[key] = parsed.item[key]
+			item = { ...item, ...parsed.item }
 		}
 
 		//try to create bookmark on server
@@ -106,6 +105,34 @@ function* createBookmark({obj={}, ignore=false, draft, onSuccess, onFail}) {
 	}
 }
 
+function* createBookmarks({items=[], ignore=false, onSuccess, onFail}) {
+	if (ignore) return;
+
+	try{
+		const res = yield call(Api.post, 'raindrops', {
+			items: items.map(item=>({
+				...item,
+				pleaseParse: {
+					weight: items.length
+				}
+			}))
+		}, { timeout: 0 })
+
+		yield put({
+			type: BOOKMARK_CREATE_SUCCESS,
+			_id: res.items.map(({_id})=>_id),
+			item: res.items,
+			onSuccess, onFail
+		});
+	} catch (error) {
+		yield put({
+			type: BOOKMARK_CREATE_ERROR,
+			error,
+			onSuccess, onFail
+		});
+	}
+}
+
 function* uploadBookmark({obj={}, ignore=false, onSuccess, onFail}) {
 	if (ignore)
 		return;
@@ -113,7 +140,7 @@ function* uploadBookmark({obj={}, ignore=false, onSuccess, onFail}) {
 	try{
 		//Todo: Check collectionId before creating bookmark!
 
-		const { item={} } = yield call(Api.upload, 'raindrop/file', obj)
+		const { item={} } = yield call(Api.upload, 'raindrop/file', obj, { timeout: 0 })
 
 		yield put({
 			type: BOOKMARK_CREATE_SUCCESS,
@@ -316,12 +343,6 @@ function* move({_id, collectionId, ignore=false, onSuccess, onFail}) {
 			onFail
 		})
 	}
-}
-
-function* preload({link}) {
-	try{
-		yield call(Api.get, 'parse?url='+encodeURIComponent(link))
-	} catch(error){}
 }
 
 function* reorder({ _id, ignore, order, collectionId }) {

@@ -22,7 +22,7 @@ export default function(state = initialState, action){switch (action.type) {
 	}
 
 	case 'RESET':{
-		return initialState
+		return state.merge(_.omit(initialState, safeKeys))
 	}
 
 	default:
@@ -53,9 +53,12 @@ const initialState = Immutable({
 	raindrops_view:			'',
 	raindrops_sort:			'sort',
 	raindrops_hide:			[],
-	raindrops_grid_size:	2,
-	raindrops_list_cover_right:false,
+	raindrops_grid_cover_size:	2,
+	raindrops_list_cover_size:	1,
+	raindrops_list_cover_right:	false,
 	raindrops_click:		'preview',
+	raindrops_buttons:		[],
+	raindrops_search_by_score:true,
 	
 	tags_sort:				'_id',
 	tags_hide:				false,
@@ -68,8 +71,20 @@ const initialState = Immutable({
 
 	broken_level:			'',
 
-	add_default_collection: -1,
+	add_default_collection: 0, //last_used
 	add_auto_save:			false,
+	mobile_add_auto_save:	false,
 	
-	browser_extension_mode: ''
+	browser_extension_mode: 'mini_app',
+
+	acknowledge:			[]
 })
+
+//this keys can be kept untouched on reset
+//useful when they configured before user login
+const safeKeys = [
+	'lang',
+	'add_default_collection',
+	'add_auto_save',
+	'browser_extension_mode'
+]

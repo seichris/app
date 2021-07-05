@@ -8,7 +8,7 @@ import { save } from '~data/actions/user'
 import { Error, Alert } from '~co/overlay/dialog'
 
 /*
-    Component, [ 'fullName', ...etc ]
+    Component, [ 'name', ...etc ]
         ->
             unsaved: Bool
             status: 'loading', ...etc
@@ -45,7 +45,9 @@ export default (Component, fields=[])  => {
                     _.pick(this.state.user, fields),
                     ()=>{
                         Alert(t.s('saveSuccess'))
-                        onSuccess()
+                        
+                        if (typeof onSuccess == 'function')
+                            onSuccess()
                     },
                     Error
                 )

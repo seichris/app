@@ -27,21 +27,23 @@ export default class SuperFrame extends React.Component {
 		const { status } = this.state
 
 		const Component = isNative ? WebView : 'iframe'
-		const sandbox = !isNative && !src.includes('raindrop.io')
+		const sandbox = !isNative && !src.includes('raindrop.io') && !src.includes('localhost')
 
 		return (
 			<div {...etc} className={s.frame+' '+className} data-status={status} data-theme='day'>
-				<Component 
-					tabIndex='-1' 
-					allowtransparency='false'
-					plugins='true'
-					src={sandbox ? `${config.webPreview}${src}` : src} 
-					sandbox={sandbox ? 'allow-scripts allow-popups' : undefined}
-					target='_self'
-					onLoad={this.onLoad}
-					onError={this.onError} />
+				{src ? (
+					<Component 
+						tabIndex='-1' 
+						allowtransparency='false'
+						plugins='true'
+						src={sandbox ? `${config.links.webPreview}${src}` : src} 
+						sandbox={sandbox ? 'allow-scripts allow-popups allow-same-origin' : undefined}
+						target='_self'
+						onLoad={this.onLoad}
+						onError={this.onError} />
+				) : null}
 
-				{status=='loading' ? <div className={s.overlay}><Preloader enlarge='1.5' /></div> : null}
+				{status=='loading' || !src ? <div className={s.overlay}><Preloader enlarge='1.5' /></div> : null}
 				{status=='error' ? <div className={s.overlay}>Error!</div> : null}
 			</div>
 		)

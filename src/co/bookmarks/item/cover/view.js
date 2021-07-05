@@ -26,6 +26,13 @@ const getUri = (uri, mode='', domain)=>{
     return thumbs[uri]
 }
 
+//pixel density
+const dpr = {
+    grid: (window.devicePixelRatio||1)+1,
+    masonry: (window.devicePixelRatio||1)+1,
+    default: window.devicePixelRatio||1
+}
+
 //main component
 export default class BookmarkItemCover extends React.PureComponent {
     static defaultProps = {
@@ -53,8 +60,8 @@ export default class BookmarkItemCover extends React.PureComponent {
     }
 
     renderImage = ()=>{
-        const { cover, view, link, domain, gridSize, indicator, ...etc } = this.props
-        let { width, height, ar } = size(view, gridSize) //use height only for img element
+        const { cover, view, link, domain, coverSize, indicator, ...etc } = this.props
+        let { width, height, ar } = size(view, coverSize) //use height only for img element
         let uri
 
         switch(view){
@@ -73,10 +80,21 @@ export default class BookmarkItemCover extends React.PureComponent {
                 break
         }
 
+        let mode
+        switch(view) {
+            case 'grid':
+                mode = 'fillmax'
+                break
+
+            default:
+                mode = 'crop'
+                break
+        }
+
         return (
             <>
                 <source
-                    srcSet={uri && `${uri}?mode=crop&format=webp&width=${width||''}&ar=${ar||''}&dpr=${window.devicePixelRatio||1}`}
+                    srcSet={uri && `${uri}?mode=${mode}&fill=solid&format=webp&width=${width||''}&ar=${ar||''}&dpr=${dpr[view]||dpr.default}`}
                     type='image/webp' />
 
                 <img 
@@ -86,8 +104,9 @@ export default class BookmarkItemCover extends React.PureComponent {
                     width={width}
                     height={height}
                     alt=' '
+                    loading={view=='masonry' ? 'eager' : 'lazy'}
                     {...etc}
-                    src={uri && `${uri}?mode=crop&width=${width||''}&ar=${ar||''}&dpr=${window.devicePixelRatio||1}`}
+                    src={uri && `${uri}?mode=${mode}&fill=solid&width=${width||''}&ar=${ar||''}&dpr=${dpr[view]||dpr.default}`}
                     //type='image/jpeg'
                     onLoad={indicator && uri ? this.onImageLoadSuccess : undefined}
                     onError={indicator && uri ? this.onImageLoadSuccess : undefined} />
@@ -101,7 +120,7 @@ export default class BookmarkItemCover extends React.PureComponent {
 
         return (
             <picture 
-                role='image'
+                role='img'
                 className={s.wrap+' '+s[view]+' '+className}>
                 {this.renderImage()}
                 {!loaded && (cover||link) && <div className={s.preloader}><Preloader /></div>}

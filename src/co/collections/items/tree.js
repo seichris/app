@@ -6,23 +6,20 @@ import Item from '../item'
 import Group from '../group'
 import Empty from './empty'
 import { ItemHeightCallback } from '~co/common/list'
+import ProCheck from '~co/user/pro/check'
 
 export default class CollectionsTree extends React.Component {
-    _scrolled = false
-
     state = {
         dataCheckpoint: 0,
         scrollToIndex: -1
     }
 
     componentDidUpdate(prev) {
-        //scroll to active on first paint
-        if (this.props.data.length && !this._scrolled){
-            this._scrolled = true
-
-            if (this.props.activeId && typeof this.props.activeId != 'object')
-                this.scrollToId(this.props.activeId)
-        }
+        //scroll to active
+        if (prev.activeId != this.props.activeId && 
+            typeof this.props.activeId != 'object' &&
+            this.props.data.length)
+            this.scrollToId(this.props.activeId)
 
         if (prev.data != this.props.data ||
             prev.customRows != this.props.customRows)
@@ -34,9 +31,11 @@ export default class CollectionsTree extends React.Component {
     }
 
     scrollToId = (id)=>
-        this.setState({
-            scrollToIndex: this.props.data
-                .findIndex(({item})=>item && item._id == id)
+        setTimeout(()=>{
+            this.setState({
+                scrollToIndex: this.props.data
+                    .findIndex(({item})=>item && item._id == id)
+            })  
         })
     
     //rendering rows
@@ -104,11 +103,12 @@ export default class CollectionsTree extends React.Component {
         if (row)
             switch(row.type){
                 case 'collection':
-                    if (row.item._id <= 0)
+                    if (row.item._id <= 0){
                         if (row.item._id==-101)
                             return true
                         else
                             return false
+                    }
                     return true
 
                 case 'group':
@@ -118,12 +118,20 @@ export default class CollectionsTree extends React.Component {
         return false
     }
 
-    rowIsDroppable = (from)=>{
+    rowIsDroppable = (from, to)=>{
         const origin = this.props.data[from]
+        const target = this.props.data[to]
 
-        if (origin)
+        if (origin && origin.item)
             switch(origin.type){
-                case 'collection': return origin.item.access.draggable
+                case 'collection': 
+                    if (!origin.item.access || !origin.item.access.draggable)
+                        return false
+
+                    if (target.item)
+                        return target.item.access && (target.item.access.root || target.item.access.draggable)
+                    
+                    return true
             }
 
         return false
@@ -143,9 +151,11 @@ export default class CollectionsTree extends React.Component {
             }
     }
 
-    onDragEnd = (from, to, action)=>{
+    onDragEnd = async(from, to, action)=>{
         const origin = this.props.data[from]
         const target = this.props.data[to]
+
+        if (!origin || !target) return
 
         switch (origin.type) {
             case 'collection':{
@@ -158,20 +168,29 @@ export default class CollectionsTree extends React.Component {
                     }
                     else {
                         //to end of previous group
-                        if (to < from){
-                            for(let i=to-1; i>0; i--)
-                                if (this.props.data[i].type=='collection'){
-                                    this.props.actions.oneReorder(origin.item._id, { after: this.props.data[i].item._id })
-                                    break
-                                }
+                        if (to < from &&
+                            this.props.data[to-1]){
+                            const prev = this.props.data[to-1]
+
+                            this.props.actions.oneReorder(
+                                origin.item._id, 
+                                prev.item ? 
+                                    { after: this.props.data[to-1].item._id } : 
+                                    { to: prev._id }
+                            )
                         }
                         //to start of current group
                         else
                             action = 'combine'
                     }
 
-                if (action=='combine')
+                if (action=='combine'){
+                    //prevent move collection to collection for non-pro
+                    if (target.item && !await ProCheck('nested'))
+                        return
+
                     this.props.actions.oneReorder(origin.item._id, { to: target.item ? target.item._id : target._id })
+                }
             }break
             
             case 'group':{

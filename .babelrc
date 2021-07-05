@@ -1,32 +1,36 @@
 {
-    "presets": ["@babel/preset-react"],
+    "presets": [
+        "@babel/preset-react",
+        [
+            "@babel/env",
+            {
+                "targets": {
+                    "browsers": [
+                        "Chrome >= 67",
+                        "Safari >= 11",
+                        "Firefox >= 55",
+                        "Edge >= 80"
+                    ]
+                },
+                "modules": false,
+                "bugfixes": true,
+                "useBuiltIns": "usage",
+                "corejs": 3
+            }
+        ]
+    ],
     "plugins": [
-        ["@babel/plugin-proposal-decorators",{"legacy": true}],
         ["@babel/plugin-proposal-class-properties",{"useBuiltIns": false}],
         ["@babel/plugin-proposal-object-rest-spread",{"useBuiltIns": false}],
         "@babel/plugin-syntax-dynamic-import"
     ],
-
     "env": {
-        "production": {
-            "presets": [
-                [
-                    "@babel/env",
-                    {
-                        "targets": {
-                            "esmodules": true
-                        },
-                        "modules": false
-                    }
-                ]
-            ],
-            "plugins": [
-                "lodash"
-            ]
-        },
-
-        "development": {
-            
-        }
-    }
+		"production": {
+			"plugins": [
+                "lodash",
+				"transform-remove-console",
+                "@babel/transform-react-constant-elements"
+			]
+		}
+	}
 }

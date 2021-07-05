@@ -1,39 +1,33 @@
-import React from 'react'
+import React, { useRef, useEffect, useCallback } from 'react'
 import t from '~t'
 
 import Downshift from 'downshift'
 import { MultiSelect } from '~co/common/select'
 import Autocomplete from '~co/tags/autocomplete'
 
-export default class TagsPicker extends React.Component {
-    static defaultProps = {
-        //...<input> specific
-        value: [],
-        spaceId: undefined, //optional
-        onChange: undefined
-    }
+export default function TagsPicker({ value=[], onChange, spaceId, ...etc }) {
+    const inputRef = useRef(null)
+    const downshiftRef = useRef(null)
 
-    inputRef = React.createRef()
-
-    stateReducer = (state, changes) => {
+    const stateReducer = useCallback((state, changes) => {
         switch (changes.type) {
             case 'focus':
                 return {
                     ...changes,
-                    highlightedIndex: state.highlightedIndex || 0
+                    highlightedIndex: state.highlightedIndex || -1
                 }
 
             case Downshift.stateChangeTypes.changeInput:
                 return {
                     ...changes,
-                    highlightedIndex: 0
+                    highlightedIndex: changes.inputValue ? 0 : -1
                 }
 
             case Downshift.stateChangeTypes.keyDownEnter:
             case Downshift.stateChangeTypes.clickItem:
                 return {
                     ...changes,
-                    highlightedIndex: state.highlightedIndex,
+                    highlightedIndex: -1,
                     isOpen: true,
                     inputValue: ''
                 }
@@ -41,47 +35,82 @@ export default class TagsPicker extends React.Component {
             default:
                 return changes
         }
-    }
+    }, [])
 
-    itemToString = item =>
-        item && item._id
+    const itemToString = useCallback(item => item && item._id, [])
 
-    onSelect = item =>
-        this.props.onChange([
-            ...this.props.value,
-            this.itemToString(item)
-        ])
+    const onSelect = useCallback(
+        item =>
+            onChange([
+                ...value,
+                itemToString(item)
+            ]),
+        [value, onChange, itemToString]
+    )
 
-    render() {
-        const { value, onChange, spaceId, ...etc } = this.props
+    const onInputKeyDown = useCallback(e => {
+        switch(e.key) {
+            case 'Enter':
+                if (!downshiftRef.current ||
+                    downshiftRef.current?.state?.highlightedIndex == -1){
+                    e.preventDefault()
+                    e.currentTarget.closest('form').requestSubmit()
 
-        return (
-            <Downshift
-                onChange={this.onSelect}
-                itemToString={this.itemToString}
-                stateReducer={this.stateReducer}
-                selectedItem={null}>
-                {downshift=>(
-                    <div>
-                        <MultiSelect 
-                            {...downshift.getInputProps({
-                                placeholder: t.s('addTags')+'…',
-                                ...etc,
-                                ref: this.inputRef,
-                                selected: value,
-                                onSelectedChange: onChange,
-                                icon: 'tag',
-                                onFocus: downshift.toggleMenu
-                            })} />
+                    if (downshiftRef.current)
+                        downshiftRef.current.closeMenu()
+                }
+            break
 
-                        <Autocomplete 
-                            selected={value}
-                            inputRef={this.inputRef}
-                            spaceId={spaceId}
-                            downshift={downshift} />
-                    </div>
-                )}
-            </Downshift>
-        )
-    }
+            case 'Escape':
+                if (e.target.value){
+                    e.preventDefault()
+                    e.stopPropagation()
+                }
+            break
+        }
+    }, [])
+
+    //prevent closing window when typed value is not yet commited
+    useEffect(()=>{
+        function onWindowClose(e) {
+            if (inputRef.current.value) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+
+        window.addEventListener('beforeunload', onWindowClose)
+        return ()=>window.removeEventListener('beforeunload', onWindowClose)
+    }, [inputRef])
+
+    return (
+        <Downshift
+            ref={downshiftRef}
+            onChange={onSelect}
+            itemToString={itemToString}
+            stateReducer={stateReducer}
+            selectedItem={null}>
+            {downshift=>(
+                <div>
+                    <MultiSelect 
+                        {...downshift.getInputProps({
+                            placeholder: t.s('addTags')+'…',
+                            ...etc,
+                            ref: inputRef,
+                            selected: value,
+                            onSelectedChange: onChange,
+                            icon: 'tag',
+                            onFocus: downshift.toggleMenu,
+                            onKeyDown: onInputKeyDown
+                        })} />
+
+                    <Autocomplete 
+                        selected={value}
+                        inputRef={inputRef}
+                        spaceId={spaceId}
+                        downshift={downshift} />
+                </div>
+            )}
+        </Downshift>
+    )
 }

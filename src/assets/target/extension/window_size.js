@@ -3,34 +3,65 @@
     It restored on next open
 */
 if (location.search.includes('browser_action')){
-    var container, _lastSavedWidth
+    var _lastSavedWidth
+    var _bodyStyle
+
+    function setBodyStyle(cssText) {
+        if (!_bodyStyle){
+            _bodyStyle = document.createElement('style')
+            document.head.appendChild(_bodyStyle)
+        }
+
+        _bodyStyle.innerHTML=`body {${cssText}}`
+    }
 
     function updateSize({ width='420px', height='auto' }) {
+        //browser type
+        var browserType = 'unknown'
+        if (/chrom(e|ium)/.test(navigator.userAgent.toLowerCase()))
+            browserType = 'chrome'
+        else if (/safari/i.test(navigator.userAgent.toLowerCase()))
+            browserType = 'safari'
+
         if (location.hash.startsWith('#/my') ||
             location.hash.startsWith('#/settings')){
             width = '750px'
-            height = '600px' //safari have bug with height >440px
+            height = '600px'
         }
 
-        container.style.width = width
-        container.style.height = height
+        setBodyStyle(`width: ${width} !important; height: ${height}  !important`)
+
+        //when browser have global zoom setting, actual max width of popover can be alot smaller, 
+        //it's bug of chrome browsers. this is the fix:
+        if (browserType=='chrome')
+            if (document.documentElement.offsetWidth < parseInt(width) ||
+                document.documentElement.offsetHeight < parseInt(height)){
+                width = document.documentElement.offsetWidth+'px'
+                height = document.documentElement.offsetHeight+'px'
+
+                setBodyStyle(`width: ${width} !important; height: ${height} !important`)
+            }
 
         saveSize(width)
     }
 
     function saveSize(width) {
+        if (!window.localStorage) return
+        
         if (width == _lastSavedWidth) return
         _lastSavedWidth = width
 
         setTimeout(() => {
-            localStorage.setItem('window-width', window.innerWidth)
-            localStorage.setItem('window-height', window.innerHeight)
+            window.localStorage.setItem('window-width', window.innerWidth)
+            window.localStorage.setItem('window-height', window.innerHeight)
         }, 100)
     }
 
     function restoreSize() {
-        const width = parseInt(localStorage.getItem('window-width'))||0
-        const height = parseInt(localStorage.getItem('window-height'))||0
+        if (!window.localStorage) return
+
+        const width = parseInt(window.localStorage.getItem('window-width'))||0
+        const height = parseInt(window.localStorage.getItem('window-height'))||0
 
         _lastSavedWidth = width
 
@@ -40,14 +71,14 @@ if (location.search.includes('browser_action')){
     window.onhashchange = function() {
         updateSize({})
     }
+    window.onbeforeunload = function() {
+        saveSize()
+    }
 
     //restore old size
-    container = document.querySelector('#react')
     restoreSize()
 
-    //reset size for html/body
+    //reset size for html
     document.documentElement.style.width = 'auto'
     document.documentElement.style.height = 'auto'
-    document.body.style.width = 'auto'
-    document.body.style.height = 'auto'
 }

@@ -22,8 +22,8 @@ export default ({ status })=>{
 
     return (
         <Header
-            data-fancy
-            data-no-shadow>
+            data-no-shadow
+            data-fancy>
             <Helmet><title>{title}</title></Helmet>
 
             <FirstAction>

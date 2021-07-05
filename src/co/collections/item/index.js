@@ -41,7 +41,7 @@ export default class CollectionsItem extends React.PureComponent {
 
             //select
             if (item._id > 0)
-                if (multiselect || e.metaKey || e.ctrlKey || e.shiftKey){
+                if (multiselect || e.shiftKey){
                     e.preventDefault()
                     return this.handlers.onSelectClick()
                 }
@@ -78,6 +78,7 @@ export default class CollectionsItem extends React.PureComponent {
         onRenameClick: ()=>{
             if (!this.props.multiselect && 
                 this.props.item._id > 0 &&
+                this.props.item.access &&
                 this.props.item.access.level>=3)
                 this.setState({ rename: true })
         },

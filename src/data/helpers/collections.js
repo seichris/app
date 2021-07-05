@@ -1,8 +1,6 @@
 import _ from 'lodash-es'
 import Immutable from 'seamless-immutable'
 
-const emptyObject = {}
-
 export const findGroupByCollection = (groups, collectionId)=>{
 	return _.find(groups, ({collections=[]})=>(collections.indexOf(parseInt(collectionId))!=-1))
 }
@@ -62,15 +60,14 @@ export const getPath = (allCollections, allGroups, objectId, options={})=>{
 		title: 	parent.title,
 		cover: 	parent.cover
 	})
-	const findParents = (findId)=>{
+	const findParents = (findId, deep=0)=>{
 		const parent = allCollections[findId]
 		
 		if (parent){
 			parents.push(makeParentItem(parent))
 
-			if (parent.parentId){
-				findParents(parent.parentId)
-			}
+			if (parent.parentId && deep<100)
+				findParents(parent.parentId, deep+1)
 		}
 	}
 
@@ -128,6 +125,9 @@ export const getChildrens = (items, item, level=0, overrideExpanded=false)=>{
 export const isGroupId = (_id)=>/^g\d+$/.test((_id||'').toString())
 
 export const shouldLoadItems = (state)=>{
+	if (state.fromCache)
+		return true
+
 	switch(state.status){
 		case 'idle':
 		case 'error':
@@ -141,14 +141,16 @@ export const shouldLoadItems = (state)=>{
 export const normalizeCollection = (item={})=>{
 	return Immutable({
 		_id: 		parseInt(item._id||0),
-		title: 		item.title,
+		title: 		item.title||'',
+		description:item.description||'',
+		slug: 		item.slug,
 		count: 		parseInt(item.count||0),
 		public: 	item.public||false,
 		expanded: 	item.expanded||false,
 		view: 		item.view||'list',
 		sort: 		parseFloat(item.sort||0),
 		author: 	item.author||parseInt(item._id||0)<=0||false,
-		access:		item.access||emptyObject,
+		access:		item.access||{},
 		created:	item.created,
 
 		cover: 		item.cover,

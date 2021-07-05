@@ -1,6 +1,14 @@
 import s from './text.module.styl'
 import React from 'react'
+import _ from 'lodash-es'
 import TextareaAutosize from 'react-autosize-textarea'
+
+const getMaxRowsProps = _.memoize(rows=>({
+    'data-max-rows': true,
+    style: {
+        '--max-rows': rows
+    }
+}))
 
 class TextInner extends React.Component {
     static defaultProps = {
@@ -51,7 +59,7 @@ class TextInner extends React.Component {
         e.currentTarget.querySelector(`.${s.text}`).focus()
 
     render() {
-        const { className='', autoSize, variant, font, multiline, selectAll, hidden, icon, children, forwardedRef, ...etc } = this.props
+        const { className='', autoSize, variant, font, multiline, selectAll, hidden, icon, children, forwardedRef, maxRows, ...etc } = this.props
         const Component = autoSize ? TextareaAutosize : 'input'
 
         return (
@@ -63,15 +71,19 @@ class TextInner extends React.Component {
                 data-select-all={selectAll}
                 data-font={font}
                 data-disabled={etc.disabled}
+                data-readonly={etc.readOnly}
                 hidden={hidden}
                 onClick={this.onContainerClick}>
                 {icon ? <div className={s.icon}>{icon}</div> : null}
 
                 <Component 
                     type='text'
+                    tabIndex='0'
                     {...etc}
                     ref={forwardedRef}
                     className={s.text}
+
+                    {...(maxRows ? getMaxRowsProps(maxRows) : {})} //react-autosize-textarea built-in maxRows buggy, content jumping
 
                     onKeyDown={this.onKeyDownField}
                     onFocus={this.onFocus} />

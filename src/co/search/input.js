@@ -8,7 +8,7 @@ import Downshift from 'downshift'
 
 function lastPart(str) {
     const parts = (str||'').split(/\s+/)
-    return ((parts[parts.length-1])||'').trim()
+    return (_.last(parts)||'').trim()
 }
 
 function setLastPart(str, val) {
@@ -17,6 +17,7 @@ function setLastPart(str, val) {
 
 export default class SearchInput extends React.Component {
     static defaultProps = {
+        autoFocus: false,
         value: '',
         onChange: undefined, //(e)
         onSubmit: undefined,
@@ -80,14 +81,27 @@ export default class SearchInput extends React.Component {
     onInputChange = e=>
         this.props.onChange(e.target.value)
 
-    forceOpen = ()=>
-        this.setState({ forceOpen: true })
+    onInputKeyDown = e=>{
+        switch(e.key) {
+            case 'Home':
+            case 'End':
+                e.nativeEvent.preventDownshiftDefault = true
+                break
+        }
+    }
+
+    forceOpen = ()=>{
+        if (this.props.autoFocus && !this._first)
+            this._first=true
+        else
+            this.setState({ forceOpen: true })
+    }
 
     forceClose = ()=>
         this.setState({ forceOpen: false })
 
     render() {
-        const { value, children, onSubmit } = this.props
+        const { value, children, autoFocus, onSubmit } = this.props
         const { forceOpen } = this.state
 
         return (
@@ -104,11 +118,13 @@ export default class SearchInput extends React.Component {
                         onSubmit={onSubmit}>
                         <Search 
                             {...downshift.getInputProps({
+                                autoFocus,
                                 placeholder: t.s('defaultCollection-0'),
                                 ref: this.inputRef,
                                 value,
                                 clearOnEscape: !downshift.isOpen || value,
                                 onChange: this.onInputChange,
+                                onKeyDown: this.onInputKeyDown,
                                 onFocus: this.forceOpen,
                                 onBlur: this.forceClose,
                                 onReset: this.forceClose,

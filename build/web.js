@@ -47,7 +47,8 @@ module.exports = (env={}) =>
                 //Service worker
                 new CopyPlugin({
                     patterns: [
-                        { from: 'assets/sw.js', to: 'sw.js' }
+                        { from: 'assets/sw.js', to: 'sw.js' },
+                        { from: 'assets/robots.txt', to: 'robots.txt' }
                     ]
                 }),
 
@@ -60,10 +61,19 @@ module.exports = (env={}) =>
                     start_url: '/',
                     display: 'minimal-ui',
                     background_color: '#0F0F47',
+                    orientation: 'any',
                     icons: [
                         {
                             src: path.resolve('src/assets/brand/macos_512.png'),
-                            size: '512x512'
+                            destination: 'assets',
+                            size: '512x512',
+                            purpose: 'any'
+                        },
+                        {
+                            src: path.resolve('src/assets/brand/maskable_512.png'),
+                            destination: 'assets',
+                            size: '512x512',
+                            purpose: 'maskable'
                         }
                     ]
                 })

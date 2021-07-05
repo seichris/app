@@ -2,11 +2,10 @@ import s from './index.module.styl'
 import React from 'react'
 
 import { Layout, Separator } from '~co/common/form'
-import Preloader from '~co/common/preloader'
 import Cover from './cover'
 import Collection from './collection'
 import Tags from './tags'
-import Buttons from './buttons'
+import Action from './action'
 import Title from './title'
 import Link from './link'
 import More from './more'
@@ -14,7 +13,12 @@ import More from './more'
 export default class BookmarkEditForm extends React.Component {
     onSubmitForm = e=>{
         e.preventDefault()
-        this.props.onSave()
+        e.stopPropagation()
+        
+        this.props.onSave().then(()=>{
+            if (this.props.autoWindowClose)
+                window.close()
+        })
     }
 
     render() {
@@ -32,14 +36,10 @@ export default class BookmarkEditForm extends React.Component {
                     <Link {...this.props} />
                     <More {...this.props} />
 
-                    <Separator />
-
-                    <Buttons {...this.props} />
+                    <Separator variant='transparent' />
+                    
+                    <Action {...this.props} />
                 </Layout>
-
-                <div className={s.loading}>
-                    <Preloader enlarge='1.5' />
-                </div>
             </form>
         )
     }

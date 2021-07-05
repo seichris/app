@@ -28,7 +28,11 @@ export default function(state, action) {switch (action.type) {
 			const clean = space
 				.set('ids', _.uniq(space.ids).slice(0, SPACE_PER_PAGE))
 				.setIn(['query', 'page'], 0)
-				.setIn(['status', 'nextPage'], blankSpace.status.nextPage)
+				.setIn(['status', 'nextPage'],
+					space.status.nextPage == 'noMore' && (space.ids||[]).length < SPACE_PER_PAGE ?
+						'noMore' :
+						blankSpace.status.nextPage
+				)
 
 			state = state.setIn(['spaces', _id], clean)
 		})
@@ -49,6 +53,19 @@ export default function(state, action) {switch (action.type) {
 			return state
 		}
 
+		//set loading status right away, because space is never loaded yet
+		if (!space){
+			let space = blankSpace
+				.setIn(['status', 'main'], 'loading')
+
+			return state.setIn(['spaces', spaceId], space)
+		}
+
+		//fix sort in query
+		if (space && query && query.sort)
+			if (!space.sorts[query.sort] || !space.sorts[query.sort].enabled)
+				query.sort = '-created'
+
 		//reset bookmarks list when query changed
 		if (space && !queryIsEqual(space.query, query)){
 			space = space
@@ -56,6 +73,7 @@ export default function(state, action) {switch (action.type) {
 				.set('highlight', {})
 				.set('lastAction', '')
 				.set('version', '')
+
 			return state.setIn(['spaces', spaceId], space)
 		}
 
@@ -161,8 +179,6 @@ export default function(state, action) {switch (action.type) {
 		}
 
 		space = space
-			.setIn(['status', 'main'], 		'loading')
-			.setIn(['status', 'nextPage'], 	'noMore')
 			.setIn(['query', 'page'], 		0)
 
 		//send query in action
@@ -263,10 +279,16 @@ export default function(state, action) {switch (action.type) {
 	}
 
 	//Update Space Status when Bookmark Changed
-	case BOOKMARK_CREATE_SUCCESS:{
-		state = actualizeSpaceStatus(state, action.spaceId)
-		state = actualizeSpaceStatus(state, '0')
+	case BOOKMARK_CREATE_SUCCESS:
+	case BOOKMARK_REMOVE_SUCCESS:{
+		if (action.spaceId)
+			(Array.isArray(action.spaceId) ? action.spaceId : [action.spaceId]).forEach(spaceId=>{
+				state = actualizeSpaceStatus(state, spaceId)
+			})
 		
+		state = actualizeSpaceStatus(state, '0')
+		state = actualizeSpaceStatus(state, '-99')
+
 		return state
 	}
 
@@ -284,17 +306,6 @@ export default function(state, action) {switch (action.type) {
 			
 			state = actualizeSpaceStatus(state, '0')
 		}
-
-		return state
-	}
-
-	case BOOKMARK_REMOVE_SUCCESS:{
-		if (action.spaceId)
-			(Array.isArray(action.spaceId) ? action.spaceId : [action.spaceId]).forEach(spaceId=>{
-				state = actualizeSpaceStatus(state, spaceId)
-			})
-		
-		state = actualizeSpaceStatus(state, '-99')
 
 		return state
 	}

@@ -13,6 +13,10 @@
     position: sticky
     top: 0
 
+    > * {
+        -webkit-app-region: no-drag;
+    }
+
     > *:not(:last-child):not(.space) {
         margin-right: var(--padding-small)
     }
@@ -23,6 +27,10 @@
 
     &[data-fancy='true'], &[data-solid='true'] {
         background: var(--background-color)
+    }
+
+    &[data-static='true'] {
+        position: static
     }
 }
 
@@ -38,7 +46,8 @@ html:global(.extension.browser_action.firefox) .header {
     position: static
 }
 
-@supports (backdrop-filter: none) {
+//very heavy for performance!
+@supports (backdrop-filter: blur(20px)) {
 	.header[data-fancy='true'] {
 		background: unquote('linear-gradient(to bottom, var(--background-color) 30%, hsla(var(--background-hsl), .6) 100%)')
 		backdrop-filter: blur(20px)
@@ -52,6 +61,7 @@ html:global(.extension.browser_action.firefox) .header {
 
     white-space: nowrap
     overflow: hidden
+    overflow: clip
     text-overflow: ellipsis
     word-wrap: break-word
 

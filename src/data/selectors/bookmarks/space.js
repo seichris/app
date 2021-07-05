@@ -1,7 +1,7 @@
 import { createSelector } from 'reselect'
 import _ from 'lodash-es'
 import { blankSpace } from '../../helpers/bookmarks'
-import { collection } from '../collections'
+import { makeCollection } from '../collections'
 
 //Space by collection id
 export const bookmarksIds = ({bookmarks}, spaceId)=>
@@ -19,12 +19,6 @@ export const status = ({bookmarks}, spaceId)=>
 	bookmarks.spaces[spaceId] ? bookmarks.spaces[spaceId].status : blankSpace.status
 
 export const makeStatus = () => status
-
-export const makeStatusMain = () => (state, spaceId)=>
-	makeStatus(state, spaceId).main
-
-export const makeStatusNextPage = () => (state, spaceId)=>
-	makeStatus(state, spaceId).nextPage
 
 export const makeBookmarksLastChange = () => createSelector(
 	[({bookmarks={}})=>bookmarks.elements],
@@ -61,11 +55,19 @@ export const makeSearchWord = ()=> createSelector(
 
 
 //View specific
-export const getGridSize = (state)=>
-	state.config.raindrops_grid_size
+export const getCoverSize = (state, view)=>{
+	switch(view) {
+		case 'grid':
+		case 'masonry':
+			return state.config.raindrops_grid_cover_size
+
+		default:
+			return state.config.raindrops_list_cover_size
+	}
+}
 
 export const makeViewHide = ()=> createSelector(
-	[state=>state.config.raindrops_hide, collection],
+	[state=>state.config.raindrops_hide, makeCollection()],
 	(hide=[], { view })=>(
 		hide
 			.filter(key=>key.startsWith(view+'_'))

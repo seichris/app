@@ -3,7 +3,7 @@ import {SPACE_PER_PAGE} from '../../constants/bookmarks'
 import _ from 'lodash-es'
 
 const rules = [
-	{ regex: /("#)([^#]*)"/gmi, override_key: 'tag' },
+	{ regex: /("#)([^#]*?)"/gmi, override_key: 'tag' },
     { regex: /(#)([^\s#]*)/gmi, override_key: 'tag' }, //if space /(#)([^\s#]*)/gmi
     { regex: /([\w.]+):([a-z0-9-]+)/gmi },
 ]
@@ -37,10 +37,15 @@ export const getUrl = (__id, query)=>{
 
 						//rules
 						for(const { regex, override_key='' } of rules){
-							const matches = clean.matchAll(regex)||[]
-							for(const [_, key, val] of matches)
+							let match
+
+							while ((match = regex.exec(clean)) !== null) {
+								const [_, key, val] = match
+								
 								if (val)
 									parts.push({ key: override_key||key, val })
+							}
+							
 							clean = clean.replace(regex, '')
 						}
 

@@ -4,13 +4,17 @@ import { connect } from 'react-redux'
 import { refresh } from '~data/actions/bookmarks'
 import { makeSpaceElements, makeSelectMode, status } from '~data/selectors/bookmarks'
 import config from '~config'
-import { openTab } from '~target'
+import { target, openTab } from '~target'
 
 import Modal, { Header, Content } from '~co/overlay/modal'
 import Preloader from '~co/common/preloader'
 
 const _warningKey = 'open-multiple-links-help-ignore'
-let showWarning = localStorage && !localStorage.getItem(_warningKey)
+let showWarning = false
+
+try{
+    showWarning = target == 'web' && localStorage && !localStorage.getItem(_warningKey)
+} catch(e){}
 
 class BookmarkOpenAll extends React.Component {
     static defaultProps = {
@@ -19,7 +23,8 @@ class BookmarkOpenAll extends React.Component {
     }
 
     componentDidMount() {
-        if (!this.props.selected)
+        if (!this.props.selected && 
+            this.props.status.main != 'loaded')
             this.props.refresh(this.props.spaceId)
         else
             this.open()
@@ -51,7 +56,8 @@ class BookmarkOpenAll extends React.Component {
         if (links.length <= 1 || !showWarning)
             onClose()
         else {
-            localStorage.setItem(_warningKey, 1)
+            if (window.localStorage)
+                window.localStorage.setItem(_warningKey, 1)
             showWarning = false
         }
     }

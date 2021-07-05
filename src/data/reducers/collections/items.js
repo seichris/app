@@ -12,7 +12,8 @@ import {
 	COLLECTIONS_LOAD_REQ, COLLECTIONS_LOAD_SUCCESS, COLLECTIONS_LOAD_ERROR,
 	COLLECTIONS_REFRESH_REQ,
 	COLLECTIONS_REORDER,
-	COLLECTIONS_EXPAND_TO, COLLECTIONS_COLLAPSE_ALL
+	COLLECTIONS_EXPAND_TO, COLLECTIONS_COLLAPSE_ALL,
+	COLLECTIONS_CLEAN_SUCCESS, COLLECTIONS_CLEAN_ERROR
 } from '../../constants/collections'
 
 export default function(state, action) {switch (action.type) {
@@ -27,7 +28,7 @@ export default function(state, action) {switch (action.type) {
 			if (groups.length>0)
 				state = state.set('groups', groups)
 
-		return state
+		return state.set('fromCache', true)
 	}
 
 	//Load
@@ -47,6 +48,7 @@ export default function(state, action) {switch (action.type) {
 
 		state = updateCollections(state, normalizeCollections(action.items, action.groups))
 		state = state.set('status', 'loaded')
+		state = state.set('fromCache', false)
 
 		return actualizeStatus(state)
 	}
@@ -72,6 +74,7 @@ export default function(state, action) {switch (action.type) {
 		switch(action.method) {
 			case 'title':
 				items = _.sortBy(state.items, ({title})=>title.toLowerCase())
+				state = state.set('groups', _.sortBy(state.groups, ({title})=>title.toLowerCase()))
 			break;
 
 			case 'count':
@@ -116,6 +119,20 @@ export default function(state, action) {switch (action.type) {
 			state = state.setIn(['items', _id, 'expanded'], false)
 		})
 
+		return state
+	}
+
+	case COLLECTIONS_CLEAN_SUCCESS:{
+		if (typeof action.onSuccess == 'function')
+			action.onSuccess(action.count||0)
+
+		return state
+	}
+
+	case COLLECTIONS_CLEAN_ERROR:{
+		if (typeof action.onFail == 'function')
+			action.onFail(action.error)
+			
 		return state
 	}
 }}

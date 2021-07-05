@@ -8,10 +8,20 @@
 	<meta http-equiv="cleartype" content="on" />
 	
 	<title>Raindrop.io</title>
+	<meta name="description" content="All-in-one bookmark manager">
 
 	<!-- security -->
-	<meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' <%= require('./config.js').csp.hosts %> <%= process.env.NODE_ENV === 'development' ? '\'unsafe-inline\' \'unsafe-eval\'' : '' %>; style-src 'self' 'unsafe-inline'; img-src * blob:; object-src 'none';">
+	<%if (process.env.APP_TARGET != 'extension') { %>
+		<meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' <%= require('./config/csp.js').hosts %> <%= process.env.NODE_ENV === 'development' ? '\'unsafe-inline\' \'unsafe-eval\'' : '' %>; style-src 'self' 'unsafe-inline'; img-src * blob:; object-src 'self' up.raindrop.io;">
+	<% } %>
 	<meta name="referrer" content="origin">
+
+	<!-- performance -->
+	<%if (process.env.NODE_ENV == 'production') { %>
+		<link rel="preconnect" href="https://rdl.ink">
+		<link rel="preconnect" href="https://api.raindrop.io" >
+	<% } %>
+	<%= process.env.APP_TARGET == 'extension' ? `<script src='${require('./assets/target/extension/preload.js?asis').default}'></script>` : '' %>
 
 	<!-- native apps -->
 	<meta name='apple-itunes-app' content='app-id=1021913807' />
@@ -19,11 +29,8 @@
 	<link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/ldgfbffkinooeloadekpmfoklnobpien">
 	
 	<!-- icons -->
-	<link rel='icon' href='<%= require("./assets/brand/icon_16.png").default %>' sizes='16x16' type='image/png'/>
-	<link rel='icon' href='<%= require("./assets/brand/icon_32.png").default %>' sizes='32x32' type='image/png'/>
-	<link rel='icon' href='<%= require("./assets/brand/icon_64.png").default %>' sizes='64x64' type='image/png'/>
-	<link rel='icon' href='<%= require("./assets/brand/icon_128.png").default %>' sizes='128x128' type='image/png'/>
-	<link rel='apple-touch-icon' href='<%= require("./assets/brand/icon_128.png").default %>' />
+	<link rel='icon' href='<%= require("./assets/brand/favicon.ico").default %>' />
+	<link rel='apple-touch-icon' href='<%= require("./assets/brand/icon_180.png").default %>' />
 	<link rel='icon' type='image/svg+xml' href='<%= require("./assets/brand/icon_raw.svg?asis").default %>' />
 
 	<!-- og/twitter cards -->

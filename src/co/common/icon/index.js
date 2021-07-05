@@ -35,3 +35,24 @@ export class IconWrap extends React.PureComponent {
 		);
 	}
 }
+
+export function Avatar({ src, className='', ...etc }) {
+	if (!src)
+		return (
+			<Icon 
+				{...etc}
+				className={s.avatarDefault + ' ' + className}
+				name='user_active' />
+		)
+
+	return (
+		<IconWrap 
+			{...etc}
+			className={s.avatar + ' ' + className}>
+			<img 
+				src={src}
+				loading='lazy'
+				decoding='async' />
+		</IconWrap>
+	);
+}

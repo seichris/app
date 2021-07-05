@@ -63,7 +63,7 @@ function* post(url, data={}, options={}) {
 		file: {uri, name, type:'image/jpeg'}
 	}
 */
-function* upload(url, _body) {
+function* upload(url, _body, options={}) {
 	const body = new FormData()
 
 	for (const key in _body ) {
@@ -72,6 +72,7 @@ function* upload(url, _body) {
 	}
 
 	const res = yield req(url, {
+		...options,
 		method: 'PUT',
 		body
 	})
@@ -106,6 +107,8 @@ function* req(url, options={}) {
 	else if (url.indexOf('http') == 0)
 		finalURL = url
 
+	let errorMessage = 'failed to load'
+
 	for(let i = 0; i < API_RETRIES; i++){
 		try{
 			const winner = yield race({
@@ -118,15 +121,19 @@ function* req(url, options={}) {
 
 			return winner.req;
 		}catch(e){
-			if (e && e.status && e.status == 408)
+			errorMessage = e.message || ''
+
+			//stop if client error
+			if (e && e.status && e.status >= 400 && e.status < 500)
 				break;
+			//retry
 			else if(i < API_RETRIES-1) {
 				yield delay(100 + (API_RETRIES * 100) ); //stop 100ms and try again
 			}
 		}
 	}
 
-	throw new ApiError({ errorMessage: 'failed to load '+finalURL })
+	throw new ApiError({ errorMessage: `${errorMessage} ${finalURL}` })
 }
 
 const fetchWrap = (url, options)=>(
@@ -135,7 +142,7 @@ const fetchWrap = (url, options)=>(
 			if (res.status >= 200 && res.status < 300)
 				return res
 			else
-				throw new ApiError({ errorMessage: 'fail_fetch_status' })
+				throw new ApiError({ status: res.status, errorMessage: 'fail_fetch_status' })
 		})
 )
 

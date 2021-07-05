@@ -3,9 +3,11 @@ import React from 'react'
 import t from '~t'
 import getThumbUri from '~data/modules/format/thumb'
 
-import Icon from '~co/common/icon'
 import Modal, { Header, Content } from '~co/overlay/modal'
-import PickerSource from '~co/picker/source/popover'
+import Button from '~co/common/button'
+import Icon from '~co/common/icon'
+import PickerFile from '~co/picker/file/element'
+import PickerLink from '~co/picker/link'
 import Preloader from '~co/common/preloader'
 
 export default class PickerImage extends React.Component {
@@ -18,30 +20,28 @@ export default class PickerImage extends React.Component {
         onClose: undefined
     }
 
-    pinAdd = React.createRef()
+    addLink = React.createRef()
 
     state = {
-        add: false,
+        addLink: false,
         screenshot_loading: false
     }
 
-    handlers = {
-        onLink: async(link)=>{
-            await this.props.onLink(link)
-            this.props.onClose()
-        },
+    onAddLinkClick = ()=>
+        this.setState({ addLink: true })
 
-        onFile: async(file)=>{
-            await this.props.onFile(file)
-            this.props.onClose()
-        }
+    onAddLinkClose = ()=>
+        this.setState({ addLink: false })
+
+    onLink = async(link)=>{
+        await this.props.onLink(link)
+        this.props.onClose()
     }
 
-    onAddClick = ()=>
-        this.setState({ add: true })
-
-    onAddClose = ()=>
-        this.setState({ add: false })
+    onFile = async(file)=>{
+        await this.props.onFile(file)
+        this.props.onClose()
+    }
 
     onScreenshotClick = async()=>{
         if (this.state.screenshot_loading)
@@ -59,9 +59,9 @@ export default class PickerImage extends React.Component {
             key={link}
             className={s.item}
             autoFocus={this.props.selected == index}
-            onClick={()=>this.handlers.onLink(link)}>
+            onClick={()=>this.onLink(link)}>
             <img 
-                src={`${getThumbUri(link)}&mode=crop&width=128&height=96&dpr=${window.devicePixelRatio||1}`}
+                src={`${getThumbUri(link)}?mode=crop&width=128&height=96&dpr=${window.devicePixelRatio||1}`}
                 loading='lazy' />
         </button>
 
@@ -72,34 +72,43 @@ export default class PickerImage extends React.Component {
 
         return (
             <Modal onClose={onClose}>
-                <Header title={t.s('cover')} />
+                <Header title={t.s('cover')} data-no-shadow>
+                    <Button 
+                        ref={this.addLink}
+                        variant='link'
+                        title={t.s('add')+' URL…'}
+                        onClick={this.onAddLinkClick}>
+                        <Icon name='add' />
+                    </Button>
+
+                    <Button
+                        as='label'
+                        variant='link'
+                        title={`${t.s('upload')} ${t.s('file').toLowerCase()}…`}>
+                        <PickerFile onFile={this.onFile}>
+                            <Icon name='upload' />
+                        </PickerFile>
+                    </Button>
+                </Header>
 
                 <Content>
                     <div className={s.items}>
                         {items.map(this.renderItem)}
 
                         {!screenshotExists ? (
-                            <button 
+                            <Button 
                                 className={s.item}
                                 title={t.s('clickToMakeScreenshot')}
                                 onClick={this.onScreenshotClick}>
                                 {screenshot_loading ? <Preloader /> : t.s('screenshot')}
-                            </button>
+                            </Button>
                         ) : null}
 
-                        <button 
-                            ref={this.pinAdd}
-                            className={s.item}
-                            title={t.s('coverUpload')}
-                            onClick={this.onAddClick}>
-                            <Icon name='add' />
-                        </button>
-
-                        {this.state.add ? (
-                            <PickerSource 
-                                {...this.handlers}
-                                pin={this.pinAdd}
-                                onClose={this.onAddClose} />
+                        {this.state.addLink ? (
+                            <PickerLink 
+                                pin={this.addLink}
+                                onClose={this.onAddLinkClose}
+                                onLink={this.onLink} />
                         ) : null}
                     </div>
                 </Content>

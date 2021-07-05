@@ -4,12 +4,14 @@ import ApiError from '../modules/error'
 import {
 	USER_LOAD_REQ, USER_LOAD_SUCCESS, USER_LOAD_ERROR,
 	USER_UPDATE_REQ, USER_UPDATE_SUCCESS, USER_UPDATE_ERROR,
+	USER_AVATAR_UPLOAD_REQ,
 	USER_REFRESH_REQ,
 	USER_LOGOUT_REQ,
 	USER_NOT_AUTHORIZED,
 	USER_LOGIN_PASSWORD,
 	USER_REGISTER_PASSWORD,
 	USER_LOGIN_NATIVE,
+	USER_LOGIN_JWT,
 	USER_LOST_PASSWORD, USER_LOST_PASSWORD_SUCCESS,
 	USER_RECOVER_PASSWORD,
 	USER_SUBSCRIPTION_LOAD_REQ, USER_SUBSCRIPTION_LOAD_SUCCESS, USER_SUBSCRIPTION_LOAD_ERROR,
@@ -24,10 +26,12 @@ export default function* () {
 	], loadUser)
 
 	yield takeLatest(USER_UPDATE_REQ, updateUser)
+	yield takeLatest(USER_AVATAR_UPLOAD_REQ, uploadAvatar)
 
 	yield takeLatest(USER_LOGIN_PASSWORD, loginWithPassword)
 	yield takeLatest(USER_REGISTER_PASSWORD, registerWithPassword)
 	yield takeLatest(USER_LOGIN_NATIVE, loginNative)
+	yield takeLatest(USER_LOGIN_JWT, loginJWT)
 
 	yield takeLatest(USER_LOST_PASSWORD, lostPassword)
 	yield takeLatest(USER_RECOVER_PASSWORD, recoverPassword)
@@ -68,9 +72,21 @@ function* updateUser({ ignore=false, onSuccess, onFail,  ...action }) {
 	}
 }
 
+function* uploadAvatar({ avatar, ignore=false, onSuccess, onFail }) {
+	if (ignore) return
+
+	try{
+		const { user } = yield call(Api.upload, 'user/avatar', { avatar })
+
+		yield put({type: USER_UPDATE_SUCCESS, user, onSuccess})
+	} catch (error) {
+		yield put({type: USER_UPDATE_ERROR, error, onFail})
+	}
+}
+
 function* loginWithPassword({email, password, onSuccess, onFail}) {
 	try {
-		yield call(Api.post, 'auth/login', {email, password});
+		yield call(Api.post, 'auth/email/login', {email, password});
 
 		yield put({type: USER_REFRESH_REQ, way: 'login', onSuccess});
 	} catch (error) {
@@ -78,10 +94,10 @@ function* loginWithPassword({email, password, onSuccess, onFail}) {
 	}
 }
 
-function* registerWithPassword({fullName, email, password, onSuccess, onFail}) {
+function* registerWithPassword({name, email, password, onSuccess, onFail}) {
 	try {
-		yield call(Api.post, 'user', {fullName, email:email||'0', password});
-		yield call(Api.post, 'auth/login', {email, password});
+		yield call(Api.post, 'auth/email/signup', {name, email:email||'0', password});
+		yield call(Api.post, 'auth/email/login', {email, password});
 
 		yield put({type: USER_REFRESH_REQ, way: 'register', onSuccess});
 	} catch (error) {
@@ -98,6 +114,18 @@ function* loginNative({params, onSuccess, onFail}) {
 		yield put({type: USER_REFRESH_REQ, way: 'native', onSuccess});
 	} catch (error) {
 		yield put({type: USER_LOAD_ERROR, error, way: 'native', onFail});
+	}
+}
+
+function* loginJWT({token, onSuccess, onFail}) {
+	try {
+		const {result, ...etc} = yield call(Api.post, 'auth/jwt', { token });
+		if (!result)
+			throw new ApiError(etc)
+
+		yield put({type: USER_REFRESH_REQ, way: 'jwt', onSuccess});
+	} catch (error) {
+		yield put({type: USER_LOAD_ERROR, error, way: 'jwt', onFail});
 	}
 }
 
@@ -118,7 +146,7 @@ function* recoverPassword({token, password, onSuccess, onFail}) {
 			throw new ApiError(etc)
 
 		//login with new password
-		yield call(Api.post, 'auth/login', {email, password})
+		yield call(Api.post, 'auth/email/login', {email, password})
 
 		yield put({type: USER_REFRESH_REQ, way: 'recover', onSuccess})
 	} catch (error) {

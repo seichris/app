@@ -39,14 +39,14 @@ class AccountLogin extends React.Component {
                 <Helmet><title>{t.s('signIn')}</title></Helmet>
 
                 <Layout>
-                    <Label>Email</Label>
+                    <Label>Email {t.s('or')} {t.s('username').toLowerCase()}</Label>
                     <Text
-                        type='email'
+                        type='text'
                         name='email'
                         disabled={status=='loading'}
                         autoFocus
                         required
-                        placeholder='john@appleseed.com'
+                        inputMode='email'
                         value={this.state.email}
                         onChange={this.onChangeValue} />
 
@@ -63,7 +63,6 @@ class AccountLogin extends React.Component {
                         name='password'
                         disabled={status=='loading'}
                         required
-                        placeholder='••••••••'
                         value={this.state.password}
                         onChange={this.onChangeValue} />
 

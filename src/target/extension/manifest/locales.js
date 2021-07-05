@@ -34,7 +34,7 @@ module.exports = ({ emitFile })=>{
                     description: ''
                 },
                 savePage: {
-                    message: s(lang, 'saveLink'),
+                    message: s(lang, 'create') + ' ' + s(lang, 'newBookmark').toLowerCase(),
                     description: ''
                 },
                 saveLink: {
@@ -47,6 +47,18 @@ module.exports = ({ emitFile })=>{
                 },
                 saveVideo: {
                     message: s(lang, 'save') + ' ' + s(lang, 'video').toLowerCase(),
+                    description: ''
+                },
+                openRaindrop: {
+                    message: s(lang, 'open') + ' Raindrop.io web-' + s(lang, 'site').toLowerCase(),
+                    description: ''
+                },
+                openSidebar: {
+                    message: s(lang, 'open') + ' ' + s(lang, 'sidebar').toLowerCase(),
+                    description: ''
+                },
+                in: {
+                    message: s(lang, 'in'),
                     description: ''
                 }
             },

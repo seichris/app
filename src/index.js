@@ -3,7 +3,10 @@ import './wdyr'
 import React from 'react'
 import { render } from 'react-dom'
 import Sentry from '~modules/vendors/sentry'
+
+//polyfills
 import 'form-request-submit-polyfill'
+import 'intersection-observer'
 
 //redux
 import { Provider } from 'react-redux'
@@ -27,15 +30,15 @@ window.onload = ()=>{
 		<Sentry>
 			<ServiceWorker>
 				<Provider store={store}>
-					<Document>
-						<App>
-							<PersistGate loading={<Splash />} persistor={persistor}>
-								<Translate loading={<Splash />}>
+					<PersistGate loading={<Splash />} persistor={persistor}>
+						<Translate loading={<Splash />}>
+							<Document>
+								<App>
 									<Routes />
-								</Translate>
-							</PersistGate>
-						</App>
-					</Document>
+								</App>
+							</Document>
+						</Translate>
+					</PersistGate>
 				</Provider>
 			</ServiceWorker>
 		</Sentry>,

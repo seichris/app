@@ -8,7 +8,7 @@
     font-size: var(--primary-font-size)
     line-height: 2
     white-space: nowrap
-    content-visibility: auto
+    cursor: default
 
     &[disabled] {
         color: var(--disable-text-color)
@@ -24,9 +24,6 @@
     }
 
 	&:hover {
-    	.info {
-    		display: none;
-    	}
     	.actions {
     		display: flex;
     	}
@@ -35,6 +32,10 @@
     >:not(:last-child), >:first-child {
         margin-right: var(--padding-small)
     }
+}
+
+a.item {
+    cursor: pointer
 }
 
 [data-theme="day"] .item.focusable.active:focus-within {
@@ -78,6 +79,7 @@
 
     white-space: nowrap
     overflow: hidden
+    overflow: clip
     text-overflow: ellipsis
     word-wrap: break-word
 

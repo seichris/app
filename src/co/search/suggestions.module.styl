@@ -24,21 +24,16 @@
         height: 100vh
         z-index: 90
         overflow: hidden
+        overflow: clip
     }
     
     .body {
+        max-height: 90vh
         background: var(--background-color)
         padding-bottom: calc(var(--padding-small) + var(--padding-mini))
         box-shadow: 0 var(--shadow-height) 0 var(--shadow-color),
             0 3px 50px rgba(0,0,0,.08)
     }
-}
-
-@supports (backdrop-filter: none) {
-    .outer[data-floating='true'] .body {
-		background: unquote('linear-gradient(to bottom, var(--background-color) 50%, hsla(var(--background-hsl), 0.5) 100%)')
-		backdrop-filter: blur(100px)
-	}
 }
 
 //Loading
@@ -55,7 +50,7 @@
     vertical-align: middle
 
     .count {
-        margin-left: 1rem
+        margin-left: var(--padding-mini)
         padding-right: 1px
         font-size: var(--tertiary-font-size)
         color: var(--secondary-text-color)

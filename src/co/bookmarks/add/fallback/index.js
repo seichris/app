@@ -1,52 +1,28 @@
 import React from 'react'
-import t from '~t'
+import { PropTypes } from 'prop-types'
 
-import Button from '~co/common/button'
-import Icon from '~co/common/icon'
-import Popover from './popover'
+import { ButtonsGroup } from '~co/common/button'
+import { More, Menu } from '~co/overlay/popover'
+import Link from './link'
+import File from './file'
 
-export default class BookmarksAdd extends React.Component {
-    static defaultProps = {
-        //...same as ../index
-    }
-
-    state = {
-        show: false
-    }
-
-    pin = React.createRef()
-
-    onAddClick = (e)=>{
-        e.preventDefault()
-        this.setState({ show: true })
-    }
-
-    onAddClose = ()=>
-        this.setState({ show: false })
-    
-    render() {
-        const { show } = this.state
-        const { autoFocus } = this.props
-
-        return (
-            <>
-                <Button 
-                    ref={this.pin}
-                    variant='primary'
-                    title={t.s('add')}
-                    autoFocus={autoFocus}
-                    onClick={this.onAddClick}>
-                    <Icon name='new_bookmark' />
-                    {t.s('add')}
-                </Button>
-
-                {show ? (
-                    <Popover 
-                        pin={this.pin}
-                        {...this.props}
-                        onClose={this.onAddClose} />
-                ) : null}
-            </>
-        )
-    }
+function BookmarksAdd(props) {
+    return (
+        <ButtonsGroup>
+            <Link {...props} />
+            
+            <More variant='primary'>
+                <Menu>
+                    <File {...props} />
+                </Menu>
+            </More>
+        </ButtonsGroup>
+    )
 }
+
+BookmarksAdd.propTypes = {
+    spaceId:    PropTypes.any,
+    onEdit:     PropTypes.func
+}
+
+export default BookmarksAdd

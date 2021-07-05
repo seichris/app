@@ -1,5 +1,5 @@
 import React from 'react'
-import _ from 'lodash'
+import debounce from '~modules/format/callback/debounce'
 import Input from './input'
 import Suggestions from './suggestions'
 
@@ -8,6 +8,7 @@ export default class Search extends React.PureComponent {
         spaceId: 0,
         value: '',
         outerRef: undefined, //where to put suggestions
+        autoFocus: false,
         events: {} //onSubmit
     }
 
@@ -17,7 +18,7 @@ export default class Search extends React.PureComponent {
     }
 
     componentDidMount() {
-        this.onSubmitBounced = _.debounce(this.handlers.onSubmit, 350, { maxWait: 1000 })
+        this.onSubmitBounced = debounce(this.handlers.onSubmit, 350, { maxWait: 1000 })
     }
 
     componentDidUpdate(prev) {

@@ -1,5 +1,7 @@
 import s from './index.module.styl'
 import React from 'react'
+import t from '~t'
+import { Prompt } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { draftLoad, draftCommit, draftChange, draftCoverUpload, oneRemove, oneRecover } from '~data/actions/bookmarks'
 import { getDraftItem, getDraftStatus, makeDraftUnsaved } from '~data/selectors/bookmarks'
@@ -12,7 +14,9 @@ class EditBookmarkContainer extends React.Component {
 	static defaultProps = {
 		_id:				undefined, //_id or link
 		new:				{}, //optional, { item: {}, autoCreate: true, preventDuplicate: true }
-		autoFocus:			''
+		autoFocus:			'',
+		autoWindowClose:	false,
+		buttons:			undefined //component
 	}
 
 	componentDidMount() {
@@ -46,13 +50,18 @@ class EditBookmarkContainer extends React.Component {
 	}
 
 	onWindowClose = (e)=>{
+		const { status, unsaved } = this.props
+
 		//save unsaved changes if user try to close window
-		if (this.props.unsaved && this.props.status != 'new'){
-			this.handlers.onCommit()
-			
-			e.preventDefault()
-			e.returnValue = ''
-		}
+		this.handlers.onCommit()
+		
+		if (unsaved && status != 'new')
+			if (e && e.preventDefault){
+				e.preventDefault()
+				e.returnValue = ''
+			}
+
+		return t.s('unsavedWarning')
 	}
 
 	handlers = {
@@ -77,7 +86,7 @@ class EditBookmarkContainer extends React.Component {
 				const { draftCommit, _id } = this.props
 
                 draftCommit(_id, res, e=>{
-					Error(e)
+					Error(e, {id: _id})
 					rej(e)
 				})
             })
@@ -98,7 +107,10 @@ class EditBookmarkContainer extends React.Component {
 		onRemove: ()=>{
 			const { oneRemove, item: { _id } } = this.props
 			if (_id)
-				oneRemove(_id, undefined, Error)
+				oneRemove(_id, ()=>{
+					if (this.props.autoWindowClose)
+						window.close()
+				}, Error)
 		},
     
         onRecover: ()=>{
@@ -109,9 +121,11 @@ class EditBookmarkContainer extends React.Component {
     }
 
 	render() {
+		const { status, unsaved } = this.props
+
 		let Component
 
-		switch(this.props.status){
+		switch(status){
 			case 'error':	Component = Crash; break
 			default:		Component = Form; break
 		}
@@ -121,6 +135,10 @@ class EditBookmarkContainer extends React.Component {
 				<Component 
 					{...this.props}
 					{...this.handlers} />
+
+				<Prompt 
+					when={unsaved && status != 'new'}
+					message={this.onWindowClose} />
 			</div>
 		)
 	}

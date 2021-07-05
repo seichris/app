@@ -3,14 +3,15 @@ import React from 'react'
 import t from '~t'
 import config from '~config'
 import { connect } from 'react-redux'
-import { getDraftStatus } from '~data/selectors/bookmarks'
+import { getDraftStatus, getDraftItem } from '~data/selectors/bookmarks'
 
 import LogoIcon from '~assets/brand/icon_raw.svg?component'
-import Header, { FirstAction, Space, Title } from '~co/common/header'
+import Header, { Space, Title } from '~co/common/header'
 import Button from '~co/common/button'
+import Icon from '~co/common/icon'
 import { Button as ProfileButton } from '~co/user/profile'
 
-function ClipperHeader({ status }) {
+function ClipperHeader({ status, item }) {
     let title = ''
 
     switch(status) {
@@ -21,24 +22,29 @@ function ClipperHeader({ status }) {
         default:        title = t.s('bookmark')+' '+t.s('saved').toLowerCase(); break
     }
 
-    return (
-        <Header
-            data-fancy>
-            <ProfileButton />
+    const collectionPath = `/my/${item.collectionId}`
 
-            <Title>{title}</Title>
+    return (
+        <Header data-no-shadow data-static>
+            <Button
+                as='a'
+                href={config.links.app.index+collectionPath}
+                target='_blank'
+                title='Raindrop.io'>
+                <LogoIcon className={s.logo} />
+            </Button>
+
+            <Title className={s.title}>{title}</Title>
 
             <Space />
-            
-            <FirstAction>
-                <Button
-                    as='a'
-                    href={config.links.app.index}
-                    target='_blank'
-                    title='Raindrop.io'>
-                    <LogoIcon className={s.logo} />
-                </Button>
-            </FirstAction>
+
+            <Button
+                as='a'
+                href={`#${collectionPath}`}>
+                <Icon name='search' />
+            </Button>
+
+            <ProfileButton />
         </Header>
     )
 }
@@ -47,6 +53,7 @@ export default connect(
     (state, { item })=>{
         return {
             status: getDraftStatus(state, item.link),
+            item: getDraftItem(state, item.link),
         }
     }
 )(ClipperHeader)

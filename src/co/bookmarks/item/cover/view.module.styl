@@ -11,17 +11,23 @@
     z-index: 1
     top: var(--padding-mini)
     left: var(--padding-mini)
-    background: unquote('hsla(var(--background-hsl), .8)')
-    backdrop-filter: blur(20px)
+    background: var(--background-color)
     padding: var(--padding-mini)
     border-radius: var(--border-radius)
     display: flex
+    animation: fadeIn .2s ease-in-out
+}
+@keyframes fadeIn {
+    0% {opacity: 0}
+    50% {opacity: 0}
+    100% {opacity: 1}
 }
 
 .image {
     position: relative
     display: block
     border-radius: 2px
+    contain: content
 
     &:after {
         content: ""
@@ -62,6 +68,7 @@
 .grid, .masonry {
     &.wrap {
         overflow: hidden;
+        overflow: clip;
         padding-top: 56.25%; //16x9 aspect-ratio
 
         &:before {
@@ -87,6 +94,13 @@
         border-top-right-radius: var(--border-radius)
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
+    }
+}
+
+.grid {
+    .image {
+        object-fit: cover
+        height: 100%
     }
 }
 

@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill'
-import normalizeURL from 'normalize-url'
+import { normalizeURL } from '~modules/format/url'
 import Api from '~data/modules/api'
-import _ from 'lodash'
+import debounce from '~modules/format/callback/debounce'
 
 const options = {
     divider: '</-rl-/>',
@@ -21,6 +21,15 @@ export async function reload() {
     if (loading)
         return
 
+    //do not load when no 'tabs' permission
+    try{
+        const havePermission = await browser.permissions.contains({
+            permissions: ['tabs']
+        })
+        if (!havePermission)
+            return
+    }catch(e){}
+
     loading = true
     items = new Set()
 
@@ -30,7 +39,8 @@ export async function reload() {
         text = await Api._get('raindrops/links', {
             headers: {
                 'Content-Type': 'text/plain'
-            }
+            },
+            timeout: 0
         })
     } catch(e) {
         console.error(e)
@@ -55,7 +65,7 @@ export async function reload() {
 }
 
 //messaging
-const onMessage = _.debounce(
+const onMessage = debounce(
     async function({ type }) {
         switch(type) {
             case 'BOOKMARKS_CHANGED':
@@ -68,10 +78,10 @@ const onMessage = _.debounce(
 )
 
 //init
-export default async function () {
-    await reload()
-
+export default function () {
     //message
     browser.runtime.onMessage.removeListener(onMessage)
     browser.runtime.onMessage.addListener(onMessage)
+    
+    reload()
 }

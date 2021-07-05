@@ -8,6 +8,7 @@ import SuperLink from '../../common/superLink'
 import Button from '~co/common/button'
 import Icon from '~co/common/icon'
 import CollectionIcon from './icon'
+import CollectionTitle from './title'
 
 export default class CollectionsItemView extends React.PureComponent {
     renderStatus = ()=>{
@@ -62,7 +63,7 @@ export default class CollectionsItemView extends React.PureComponent {
                     active={active} />
 
                 <ItemTitle>
-                    {title}
+                    <CollectionTitle {...this.props} />
                 </ItemTitle>
 
                 {this.renderStatus()}
@@ -92,7 +93,9 @@ export default class CollectionsItemView extends React.PureComponent {
 					onClick={onClick}
 					onDoubleClick={onRenameClick}
                     onContextMenu={onContextMenu}
-					onKeyUp={onKeyUp} />
+					onKeyUp={onKeyUp}>
+                    {title}
+                </SuperLink>
             </Item>
         )
     }

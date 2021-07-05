@@ -5,7 +5,7 @@ import { getTags } from './items'
 const emptyArray = []
 
 function filterSelected(tags=[], selected=[]) {
-	if (!selected) return tags
+	if (!selected.length) return tags
 	return tags.filter(item =>
 		!selected.includes(item._id) && 
 		!selected.includes(item.query)
@@ -21,8 +21,26 @@ function filterOther(tags=[], other=[]) {
 
 function filterByQuery(tags=[], query='') {
 	if (!query) return tags
-	return tags.filter(item => 
-		item._id.toLowerCase().startsWith(query)
+
+	const filter = query.toLowerCase()
+
+	//filter and order by score
+	return _.orderBy(
+		_.uniqBy(
+			[
+				...tags.filter(item => 
+					item._id.toLowerCase().includes(filter)
+				),
+				{
+					_id: query,
+					query: `#${query}`,
+					isNew: true
+				}
+			],
+			'_id'
+		),
+		({ _id, isNew }) => isNew || _id.toLowerCase().indexOf(filter)+_id.toLowerCase(),
+		'asc'
 	)
 }
 
@@ -36,12 +54,16 @@ export const makeTagsAutocomplete = ()=>createSelector(
 		(state, spaceId, filter, selected)=>selected||emptyArray
 	],
 	(_other, _collection, _recent, _filter, selected)=>{
-		const filter = String(_filter||'').trimStart().toLowerCase().replace(/^#/,'')
+		const filter = String(_filter||'').trimStart().replace(/^#/,'')
+
+		//filter
+		if (filter)
+			return filterByQuery(filterSelected([..._collection,..._other], selected), filter)
 
 		//tags
-		let recent 		= filterByQuery(filterSelected(_recent, selected), filter)
-		let collection 	= filterByQuery(filterOther(filterSelected(_collection, selected), recent), filter)
-		let other 		= filterByQuery(filterOther(filterSelected(_other, selected), [...recent, ...collection]), filter)
+		let recent 		= filterSelected(_recent, selected)
+		let collection 	= filterOther(filterSelected(_collection, selected), recent)
+		let other 		= filterOther(filterSelected(_other, selected), [...recent, ...collection])
 
 		let sections = []
 

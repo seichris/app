@@ -1,6 +1,8 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { bookmark, tags, makeIsSelected, makeHighlight, makeCreatorRef, selectModeWorking, getGridSize } from '~data/selectors/bookmarks'
+import { bindActionCreators } from 'redux'
+import { bookmark, tags, makeIsSelected, makeHighlight, makeCreatorRef, makeSelectModeEnabled, selectModeWorking, getCoverSize } from '~data/selectors/bookmarks'
+import * as bookmarksActions from '~data/actions/bookmarks'
 import { copyText } from '~modules/browser'
 
 import View from './view'
@@ -15,12 +17,12 @@ class BookmarkItem extends React.Component {
         spaceId:            0,
         view:               '', //list, grid, etc...
         access:             {}, //{ level }...
-        selectModeEnabled:  false,
         //funcs
         getLink:            undefined, //same as ...items/index
-        mainAction:         '', //same as ...items/index
         events:             {}, //same as ...items/index
-        actions:            {}  //redux collections
+        actions:            {}, //redux collections
+        //special
+        innerRef:           undefined
     }
 
     state = {
@@ -29,17 +31,23 @@ class BookmarkItem extends React.Component {
 
     handlers = {
         onClick: (e)=>{
-            const { selectModeEnabled } = this.props
+            if (!e) return
 
-            if (selectModeEnabled){
+            const { selectModeEnabled, item } = this.props
+
+            if (e.metaKey || e.ctrlKey || e.nativeEvent.which==3){
                 e.preventDefault()
-                return this.handlers.onSelectClick()
+                return window.open(item.link)
             }
 
-            if (e.metaKey || e.ctrlKey || e.shiftKey){
+            if (selectModeEnabled || e.shiftKey){
                 e.preventDefault()
-                this.handlers.onSelectClick()
+                return this.handlers.onSelectClick(e)
             }
+
+            if (typeof this.props.events.onBookmarkClick == 'function' && 
+                this.props.events.onBookmarkClick(item))
+                e.preventDefault()
         },
 
         onDoubleClick: (e)=>{
@@ -47,18 +55,8 @@ class BookmarkItem extends React.Component {
             window.open(this.props.item.link)
         },
 
-        onMouseDown: e=>{
-            //middle button click
-            if (e.button===1){
-                e.preventDefault()
-                window.open(this.props.item.link)
-            }else
-                this.forceUpdate() //update target link
-        },
-
-        onSelectClick: ()=>{
-            this.props.actions[this.props.selected ? 'unselectOne' : 'selectOne'](this.props.spaceId, this.props.item._id)
-        },
+        onSelectClick: (e={})=>
+            this.props.actions[(this.props.selected && !e.shiftKey) ? 'unselectOne' : 'selectOne'](this.props.spaceId, this.props.item._id, e.shiftKey),
 
         onImportantClick: ()=>
             this.props.actions.oneImportant(this.props.item._id),
@@ -125,19 +123,25 @@ export default connect(
         const getIsSelected = makeIsSelected()
         const getHighlight = makeHighlight()
         const getCreatorRef = makeCreatorRef()
+        const getSelectModeEnabled = makeSelectModeEnabled()
     
-        return (state, { _id, spaceId, selectModeEnabled })=>{
+        return (state, { _id, spaceId, view })=>{
             const item = bookmark(state, _id)
+            const selectModeEnabled = getSelectModeEnabled(state, spaceId)
     
             return {
                 item,
                 tags: tags(state, _id),
                 selected: selectModeEnabled ? getIsSelected(state, spaceId, _id) : false,
+                selectModeEnabled,
                 selectDisabled: selectModeWorking(state) ? true : false,
                 highlight: getHighlight(state, spaceId, _id),
                 creatorRef: getCreatorRef(state, _id),
-                gridSize: getGridSize(state, spaceId)
+                coverSize: getCoverSize(state, view)
             }
         }
-    }
+    },
+    (dispatch)=>({
+		actions: bindActionCreators(bookmarksActions, dispatch)
+    })
 )(BookmarkItem)

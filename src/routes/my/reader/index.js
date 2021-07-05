@@ -76,9 +76,10 @@ export default connect(
 
             //available tabs
             const tabs = [
-                ...target != 'extension' ? ['preview'] : [], 
-                ...access.level>=3?['edit']:[], 
-                ...item.cache && access.level>=3?['cache']:[],
+                ...target != 'extension' && item.type!='link' ? ['preview'] : [], 
+                ...target != 'extension' ? ['web'] : [], 
+                ...access && access.level>=3?['edit']:[], 
+                ...item.cache && access && access.level>=3?['cache']:[],
             ]
 
             return {

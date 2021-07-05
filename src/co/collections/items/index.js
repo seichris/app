@@ -1,6 +1,7 @@
 import s from './index.module.styl'
 import React from 'react'
 import t from '~t'
+import _ from 'lodash-es'
 import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import * as collectionsActions from '~data/actions/collections'
@@ -28,10 +29,12 @@ class CollectionsItems extends React.Component {
 				{_id: -1, title: t.s('defaultCollection--1')},
 				{_id: -99, title: t.s('defaultCollection--99')}
 			],
-			groupTitle: t.s('myCollections')
+			groupTitle: _.capitalize(t.s('collectionsCount'))
         })
         
-        this.reload()
+        this.props.actions.load()
+
+        window.addEventListener('focus', this.refresh)
     }
 
     componentDidUpdate({ activeId, status }) {
@@ -48,11 +51,12 @@ class CollectionsItems extends React.Component {
 
     componentWillUnmount() {
         this.props.actions.unselectAll()
+
+        window.removeEventListener('focus', this.refresh)
     }
 
-    reload = ()=>{
+    refresh = ()=>
         this.props.actions.refresh()
-    }
 
     createNewCollection = (e)=>{
         let asChild = false
@@ -69,7 +73,7 @@ class CollectionsItems extends React.Component {
         const { selectMode, activeId, ...etc } = this.props
 
         return (
-            <div className={s.wrap}>
+            <div className={s.wrap} role='list'>
                 <SelectMode 
                     selectMode={selectMode}
                     {...etc} />

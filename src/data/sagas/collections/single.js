@@ -85,7 +85,7 @@ function* actualizeCollectionCount({ ignore, spaceId, movedFromSpaceId }) {
 	}
 
 	//system collections
-	const { items={}, result=false } = yield call(Api.get, 'stat')
+	const { items={}, result=false } = yield call(Api.get, 'user/stats')
 	if (result)
 		operations.push(
 			...items.map(({_id, count})=>
@@ -222,10 +222,6 @@ function* addBlank({ siblingId, asChild, ignore=false }) {
 
 	const state = yield select()
 
-	//prevent creating nested collection if non pro
-	if (asChild && !state.user.current.pro)
-		asChild = false
-
 	//new item
 	const item = {
 		_id: -101,
@@ -251,15 +247,18 @@ function* addBlank({ siblingId, asChild, ignore=false }) {
 		after = parseInt(siblingId)
 
 		//should be in specific parent
-		const collection = state.collections.getIn(['items', after])
-		if (collection){
-			if (asChild){
-				item.parentId = collection._id
-				item.sort = -1
-			}
-			else if (collection.parentId){
-				item.parentId = collection.parentId
-				item.sort = collection.sort + 0.5
+		//prevent creating nested collection if non pro
+		if (state.user.current.pro){
+			const collection = state.collections.getIn(['items', after])
+			if (collection){
+				if (asChild){
+					item.parentId = collection._id
+					item.sort = -1
+				}
+				else if (collection.parentId){
+					item.parentId = collection.parentId
+					item.sort = collection.sort + 0.5
+				}
 			}
 		}
 
@@ -340,7 +339,7 @@ function* uploadCover({ _id=0, cover, ignore=false, onSuccess, onFail }) {
 	if (ignore) return
 
 	try{
-		const { item={} } = yield call(Api.upload, `collection/${_id}/cover`, { cover })
+		const { item={} } = yield call(Api.upload, `collection/${_id}/cover`, { cover }, { timeout: 0 })
 
 		yield put({
 			type: COLLECTION_UPDATE_REQ,
@@ -508,8 +507,6 @@ function* reorderCollection({_id=0, ignore=false, to, after, before}) {
 				else{
 					if (collection.access.draggable === false)
 						throw new ApiError({ status: 403, errorMessage: 'collection is not draggable' })
-
-					yield onlyForProUsersCheck()
 					
 					let order = 0
 					let siblings = 0
@@ -526,6 +523,10 @@ function* reorderCollection({_id=0, ignore=false, to, after, before}) {
 							}
 						}
 					)
+
+					//prevent for non-pro users
+					if (collection.parentId != target.parentId)
+						yield onlyForProUsersCheck()
 
 					actions.push({
 						type: COLLECTION_UPDATE_REQ,

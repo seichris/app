@@ -53,9 +53,9 @@ const Translate = {
 			case 'es':
 				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/es.json');
 				break;
-			case 'fi':
-				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/fi.json');
-				break;
+			// case 'fi':
+			// 	Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/fi.json');
+			// 	break;
 			case 'fr':
 				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/fr.json');
 				break;
@@ -68,6 +68,9 @@ const Translate = {
 			case 'ja':
 				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/ja.json');
 				break;
+			case 'ko':
+				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/ko.json');
+				break;
 			case 'nl':
 				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/nl.json');
 				break;
@@ -78,8 +81,6 @@ const Translate = {
 				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/pt_BR.json');
 				Translate.currentLang = 'pt_BR'
 				break;
-			case 'kk':
-			case 'uk':
 			case 'ru':
 				Translate.strings = await import(/* webpackPreload: true */ '~assets/languages/ru.json');
 				break;
